@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# Fixed teacher-forced history comparison: integrated baseline twice vs candidate.
+# Usage: scripts/verify-deep-mask [NEW_OUTPUT_DIR] [32768|65536|both]
+# INKLING_DEEP_SOURCE/INKLING_DEEP_BASE/INKLING_DEEP_CANDIDATE select source
+# and build directories. INKLING_DEEP_EXPLICIT=1 enables explicit-mask opt-in.
+set -euo pipefail
+root=$(cd "$(dirname "$0")/.." && pwd)
+cd "$root"
+source_dir=$(realpath "${INKLING_DEEP_SOURCE:-$root/.work/dspark-repro/src}")
+base=$(realpath "${INKLING_DEEP_BASE:-$root/.work/dspark-repro/build}")
+candidate=$(realpath "${INKLING_DEEP_CANDIDATE:-$root/.work/dspark-fused-repro/build}")
+hub=$(realpath "${HF_HUB_CACHE:-${HF_HOME:-$HOME/.cache/huggingface}/hub}")
+image=${INKLING_BUILDER:-inkling-mini-blackwell-builder:v0.1}
+python=${INKLING_PYTHON:-"$root/.work/venv/bin/python"}
+out=${1:-"$root/.work/deep-mask-$(date -u +%Y%m%dT%H%M%S)-$$"}
+size=${2:-both}
+case "$size" in 32768|65536) depths=("$size");; both) depths=(32768 65536);; *) echo 'Expected 32768, 65536 or both.' >&2; exit 2;; esac
+model=/hub/models--ggml-org--Inkling-2-Mini-GGUF/snapshots/e8a2cecf0e78914f07cc27b9be711a9b2c7561d9/Inkling-2-Mini-IQ4_NL.gguf
+[[ -r "$hub/${model#/hub/}" ]] || { echo 'Pinned model missing.' >&2; exit 1; }
+"$python" -c 'import numpy'
+mkdir "$out"
+out=$(realpath "$out")
+docker run --rm --network=none --user "$(id -u):$(id -g)" \
+    -v "$root:/project:ro" -v "$source_dir:/source:ro" -v "$base:/baseline:ro" -v "$out:/output" -w /project \
+    --entrypoint bash "$image" -ec 'g++ -w -O2 -std=c++17 -I/source/include -I/source/ggml/include verification/deep_logits.cpp -L/baseline/bin -Wl,-rpath-link,/baseline/bin -Wl,--allow-shlib-undefined -l:libllama.so -lggml -lggml-base -o /output/deep_logits'
+for depth in "${depths[@]}"; do
+    for arm in base base2 candidate; do
+        lib=$base; explicit=0
+        if [[ $arm == candidate ]]; then lib=$candidate; explicit=${INKLING_DEEP_EXPLICIT:-1}; fi
+        "$root/scripts/with-gpu" docker run --rm --gpus device=0 --network=none --user "$(id -u):$(id -g)" \
+            -v "$root:/project:ro" -v "$lib:/selected:ro" -v "$hub:/hub:ro" -v "$out:/output" -w /project \
+            -e "LD_LIBRARY_PATH=/selected/bin:/usr/local/cuda/lib64:/usr/local/nvidia/lib64" \
+            -e "INKLING_EXPLICIT_REL_MASK=$explicit" --entrypoint /output/deep_logits "$image" \
+            "$model" /project/verification/prompt_long.txt "/output/$depth-$arm.bin" "$depth" \
+            >"$out/$depth-$arm.stdout" 2>"$out/$depth-$arm.log"
+    done
+done
+status=0
+: > "$out/comparison-return-codes.txt"
+for depth in "${depths[@]}"; do
+    for arm in base2 candidate; do
+        rc=0
+        "$python" verification/summarize.py "$out/$depth-base.bin" "$out/$depth-$arm.bin" >"$out/$depth-$arm.json" 2>"$out/$depth-$arm.compare.log" || rc=1
+        cmp -s "$out/$depth-base.bin" "$out/$depth-$arm.bin" || rc=1
+        "$python" - "$out/$depth-$arm.json" <<'PY' || rc=1
+import json, sys
+with open(sys.argv[1]) as f:
+    result = json.load(f)
+if not result['all_bitwise_equal'] or any(row['masked'] for row in result['rows']):
+    raise SystemExit('nonfinite or nonidentical logits')
+PY
+        printf 'history=%s baseline-vs-%s return_code=%s\n' "$depth" "$arm" "$rc" | tee -a "$out/comparison-return-codes.txt"
+        ((rc == 0)) || status=1
+    done
+done
+printf 'Results: %s\n' "$out"
+exit "$status"

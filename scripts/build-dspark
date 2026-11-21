@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# Private experimental build: v0.1 short-K baseline plus pinned upstream DSpark PR.
+set -euo pipefail
+root=$(cd "$(dirname "$0")/.." && pwd)
+reference=${INKLING_WORK:-"$root/.work/release"}
+image=${INKLING_BUILDER:-inkling-mini-blackwell-builder:v0.1}
+base=e6d624b9a4b95c6b52f5ca384d70b75581f9821a
+short="$root/patches/sm120-short-reduction.patch"
+dspark="$root/patches/inkling2-dspark-0a9105.patch"
+mask="$root/patches/sm120-inkling-rel-mask.patch"
+output=''
+fused_mask=0
+usage() { echo 'Usage: scripts/build-dspark [--reference V01_WORK] [--fused-mask] --output NEW_DIR'; }
+while (($#)); do
+  case "$1" in
+    --reference) (($# >= 2)) || { usage >&2; exit 2; }; reference=$2; shift 2;;
+    --output) (($# >= 2)) || { usage >&2; exit 2; }; output=$2; shift 2;;
+    --fused-mask) fused_mask=1; shift;;
+    --help|-h) usage; exit 0;;
+    *) echo "Unknown argument: $1" >&2; usage >&2; exit 2;;
+  esac
+done
+[[ -n $output && -d $reference ]] || { usage >&2; exit 2; }
+reference=$(cd "$reference" && pwd -P)
+output_abs=$(realpath -m -- "$output")
+case "$output_abs/" in "$reference/"*) echo 'Output must be outside reference.' >&2; exit 1;; esac
+src="$reference/src-patch"; bin="$reference/build-patch"
+[[ -d $src/.git && -f $bin/CMakeCache.txt && -x $bin/bin/llama-server ]] || { echo 'Build v0.1 using scripts/build first.' >&2; exit 1; }
+[[ $(git -C "$src" rev-parse HEAD) == "$base" ]] || { echo 'Unexpected reference commit.' >&2; exit 1; }
+[[ $(sha256sum "$short" | cut -d' ' -f1) == fba3d4f68646c5f8276fadee54e00d041f62f7b83cedcabe42f74ae1433ccf4c ]] || { echo 'Unexpected v0.1 patch.' >&2; exit 1; }
+[[ $(sha256sum "$dspark" | cut -d' ' -f1) == 027eca5b5fe278a6a0aee5e95d3e8b71b8f4954be7a9c10a7bd0667a518f9be2 ]] || { echo 'Unexpected DSpark patch.' >&2; exit 1; }
+if ((fused_mask)); then
+  [[ $(sha256sum "$mask" | cut -d' ' -f1) == abdf371d5ea9958704d321921d8d3854f73637b6929873a42272204bc3dd1113 ]] || { echo 'Unexpected fused-mask patch.' >&2; exit 1; }
+fi
+git -C "$src" diff --cached --quiet || { echo 'Reference has staged changes.' >&2; exit 1; }
+[[ -z $(git -C "$src" ls-files --others --exclude-standard) ]] || { echo 'Reference has untracked files.' >&2; exit 1; }
+git -C "$src" diff --no-ext-diff --relative | cmp -s - "$short" || { echo 'Reference diff differs from v0.1 patch.' >&2; exit 1; }
+grep -qx 'CMAKE_HOME_DIRECTORY:INTERNAL=/src/llama.cpp' "$bin/CMakeCache.txt" && \
+grep -qx 'CMAKE_CACHEFILE_DIR:INTERNAL=/src/build-base' "$bin/CMakeCache.txt" && \
+grep -qx 'CMAKE_BUILD_TYPE:STRING=Release' "$bin/CMakeCache.txt" && \
+grep -qx 'CMAKE_CUDA_ARCHITECTURES:UNINITIALIZED=120' "$bin/CMakeCache.txt" || { echo 'Incompatible reference CMake cache.' >&2; exit 1; }
+docker image inspect "$image" >/dev/null 2>&1 || { echo "Missing builder: $image" >&2; exit 1; }
+driver=$(ldconfig -p | awk '/libcuda\.so\.1 .*x86-64/ && !path {path=$NF} END {print path}')
+[[ -r $driver ]] || { echo 'Host libcuda.so.1 required for linking.' >&2; exit 1; }
+mkdir "$output" || { echo 'Output already exists or cannot be created.' >&2; exit 1; }
+output=$(cd "$output" && pwd -P)
+cp -a --reflink=auto "$src" "$output/src"
+cp -a --reflink=auto "$bin" "$output/build"
+git -C "$output/src" apply --check "$dspark"
+git -C "$output/src" apply "$dspark"
+git -C "$output/src" diff --no-ext-diff --relative -- ggml/src/ggml-cuda/mmvf.cu | cmp -s - "$short" || { echo 'Short-K patch changed unexpectedly.' >&2; exit 1; }
+git -C "$output/src" apply --reverse --check "$dspark" || { echo 'DSpark patch readback failed.' >&2; exit 1; }
+if ((fused_mask)); then
+  git -C "$output/src" apply --check "$mask"
+  git -C "$output/src" apply "$mask"
+  git -C "$output/src" apply --reverse --check "$mask" || { echo 'Fused-mask patch readback failed.' >&2; exit 1; }
+fi
+printf 'Upstream PR head 0a9105de42d2c3e3cbc72cb1f398c743ada4f342; target base %s.\n' "$base"
+printf 'Reference CUDA library SHA-256: '; sha256sum "$bin/bin/libggml-cuda.so" | cut -d' ' -f1
+docker run --rm --network none --user "$(id -u):$(id -g)" -e JOBS="${JOBS:-10}" -e FUSED_MASK="$fused_mask" \
+  -v "$driver:/usr/lib/x86_64-linux-gnu/libcuda.so.1:ro" \
+  -v "$output/src:/src/llama.cpp:ro" -v "$output/build:/src/build-base" \
+  --entrypoint bash "$image" -ec '
+    cmake -S /src/llama.cpp -B /src/build-base -DCMAKE_BUILD_TYPE=Release \
+      -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=120 -DGGML_NATIVE=OFF \
+      -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_UI=OFF -DLLAMA_USE_PREBUILT_UI=OFF
+    cmake --build /src/build-base --target llama-bench llama-server --parallel "$JOBS"
+    if [ "$FUSED_MASK" = 1 ]; then
+      c++ -std=c++17 -I/src/llama.cpp/ggml/include /src/llama.cpp/tests/inkling-rel-mask-smoke.cpp \
+        -L/src/build-base/bin -lggml-cuda -lggml-cpu -lggml -lggml-base -o /src/build-base/inkling-rel-mask-smoke
+      LD_LIBRARY_PATH=/src/build-base/bin:/usr/local/cuda/lib64 /src/build-base/inkling-rel-mask-smoke cpu
+    fi'
+printf 'Experimental server: %s/build/bin/llama-server (run inside the same CUDA container). No GPU used for build.\n' "$output"
+if ((fused_mask)); then printf 'Opt in inside runtime container: INKLING_EXPLICIT_REL_MASK=1.\n'; fi

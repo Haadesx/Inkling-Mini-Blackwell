@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Serve our original IQ4_NL target with the combined build.
+set -euo pipefail
+root=$(cd "$(dirname "$0")/.." && pwd)
+export INKLING_BIN_DIR=${INKLING_DSPARK_BUILD:-"$root/.work/dspark-repro/build"}
+draft=/hub/models--unsloth--Inkling-2-Mini-GGUF/snapshots/ae9327c5fbc7333116ba32eee78bb5d2bbefae4f/dspark-Inkling-2-Mini-Q8_0.gguf
+hub=${HF_HUB_CACHE:-${HF_HOME:-"$HOME/.cache/huggingface"}/hub}
+if [[ ${1:-} == --plain ]]; then
+    shift
+    exec "$root/scripts/llama" patch serve "$@"
+fi
+[[ -r "$hub/${draft#/hub/}" ]] || { echo 'Fetch the pinned DSpark file with scripts/fetch.py dspark-draft.' >&2; exit 1; }
+width=${INKLING_DRAFT_WIDTH:-7}
+[[ "$width" =~ ^[1-7]$ ]] || { echo 'INKLING_DRAFT_WIDTH must be 1–7.' >&2; exit 2; }
+exec "$root/scripts/llama" patch serve -md "$draft" --spec-type draft-dspark --spec-draft-n-max "$width" -ngld 99 "$@"

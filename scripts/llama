@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Run the selected build in the same environment used for compilation.
+set -euo pipefail
+root=$(cd "$(dirname "$0")/.." && pwd)
+if [[ $# -lt 2 || ! "$1" =~ ^(base|patch)$ || ! "$2" =~ ^(bench|serve)$ ]]; then
+    echo "Usage: scripts/llama {base|patch} {bench|serve} [llama.cpp options]" >&2
+    exit 2
+fi
+variant=$1
+action=$2
+shift 2
+work=${INKLING_WORK:-"$root/.work/release"}
+image=${INKLING_BUILDER:-inkling-mini-blackwell-builder:v0.1}
+hub=${HF_HUB_CACHE:-${HF_HOME:-"$HOME/.cache/huggingface"}/hub}
+snapshot=models--ggml-org--Inkling-2-Mini-GGUF/snapshots/e8a2cecf0e78914f07cc27b9be711a9b2c7561d9
+weights="$snapshot/Inkling-2-Mini-IQ4_NL.gguf"
+[[ -r "$hub/$weights" ]] || { echo 'Download the pinned GGUF with scripts/fetch.py gguf.' >&2; exit 1; }
+bin=${INKLING_BIN_DIR:-"$work/build-$variant"}
+[[ -x "$bin/bin/llama-bench" ]] || { echo "Missing $variant build. Run scripts/build." >&2; exit 1; }
+cc=$(nvidia-smi -i 0 --query-gpu=compute_cap --format=csv,noheader)
+[[ "$cc" == '12.0' ]] || { echo "These SM120 binaries need compute capability 12.0 (GPU 0 reports $cc)." >&2; exit 1; }
+run=(docker run --rm --gpus device=0 --user "$(id -u):$(id -g)" -e HOME=/tmp
+    -e LD_LIBRARY_PATH=/src/build-base/bin:/usr/local/cuda/lib64:/usr/local/nvidia/lib64
+    -v "$bin:/src/build-base:ro" -v "$hub:/hub:ro")
+if [[ ${INKLING_EXPLICIT_REL_MASK:-0} == 1 ]]; then run+=(-e INKLING_EXPLICIT_REL_MASK=1); fi
+if [[ "$action" == serve ]]; then
+    port=${INKLING_PORT:-18491}
+    run+=(-p "127.0.0.1:$port:8080" --name "inkling-mini-serve-$port")
+    exe=llama-server
+    args=(-c "${INKLING_CTX:-16384}" -np "${INKLING_SLOTS:-1}" --host 0.0.0.0 --port 8080 --alias inkling-mini --jinja -cram 0)
+    if [[ "${INKLING_VISION:-1}" == 1 ]]; then args+=(--mmproj "/hub/$snapshot/mmproj-Inkling-2-Mini-BF16.gguf"); fi
+else
+    run+=(--network none)
+    exe=llama-bench
+    args=(-o json)
+fi
+exec "$root/scripts/with-gpu" "${run[@]}" --entrypoint "/src/build-base/bin/$exe" "$image" \
+    -m "/hub/$weights" -ngl 99 -t 8 -ctk f16 -ctv f16 -fa on -b 512 -ub 512 "${args[@]}" "$@"

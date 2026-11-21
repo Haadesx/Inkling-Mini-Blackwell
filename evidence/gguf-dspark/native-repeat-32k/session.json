@@ -1,0 +1,1678 @@
+{
+  "version": 1,
+  "engine": "sglang",
+  "model": "inkling-mini",
+  "run_id": "agent-session-v1",
+  "size": "32k",
+  "prefix_content_tokens": 32768,
+  "prefix_sha256": "b1e49e62ab5c9bf1f2c7dd74d774e3ccfd8152a609226f65eda8ddba93111bc0",
+  "user_message_sha256": "e5b686a3c6085aa69c7311d3ec867fd22543608f30d0019b0dbbc67bf4ec226b",
+  "tokenizer_sha256": "7f332727f9a3f093dd452a39cc978e6757627e5dad1b0673aa4e75174f236dd6",
+  "timestamp_utc": "2026-11-21T23:04:18.608050+00:00",
+  "max_tokens": 512,
+  "seed": 42,
+  "reasoning_effort": "low",
+  "tool_schema": {
+    "type": "function",
+    "function": {
+      "name": "read_release_record",
+      "description": "Read one release record by exact name. The returned next_name identifies the next record; null means the chain ends.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "cache_policy": "engine default",
+  "turns": [
+    {
+      "wall_s": 2.898273266000615,
+      "ttft_s": 2.468051314001059,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "The user wants me to follow a release-record chain. Start with name \"alder\". Call read_release_record exactly once for each record, following next_name until null. After reading all sixteen records, identify the record with the largest value and return ONLY JSON with keys \"name\", \"code\", and \"value\".\n\nThe config says sentinel=37 but that's likely a distractor. The actual task is the release-record chain. Let me start.",
+      "tool_calls": [
+        {
+          "id": "call_964575b5c90249a9bdaf3f03",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\": \"alder\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 32999,
+        "total_tokens": 33143,
+        "completion_tokens": 144,
+        "prompt_tokens_details": null,
+        "reasoning_tokens": 107,
+        "completion_tokens_details": {
+          "reasoning_tokens": 107
+        }
+      },
+      "server_timings": [],
+      "sglext": [
+        {
+          "spec_tokens_details": {
+            "spec_accept_rate": 0.4489795918367347,
+            "spec_accept_length": 4.114285714285714,
+            "spec_cap_length": 0.0,
+            "spec_block_accept_length": 0.0,
+            "spec_num_correct_drafts": 110,
+            "spec_num_proposed_drafts": 245,
+            "spec_verify_ct": 35,
+            "spec_correct_drafts_histogram": [
+              7,
+              6,
+              4,
+              2,
+              5,
+              3,
+              1,
+              7
+            ],
+            "spec_cap_lens_histogram": []
+          }
+        }
+      ],
+      "timing_spec_frames": [
+        {
+          "id": "3bde6aac419a416cb51b93549d8e22db",
+          "object": "chat.completion.chunk",
+          "created": 1795302258,
+          "model": "inkling-mini",
+          "choices": [],
+          "usage": null,
+          "sglext": {
+            "spec_tokens_details": {
+              "spec_accept_rate": 0.4489795918367347,
+              "spec_accept_length": 4.114285714285714,
+              "spec_cap_length": 0.0,
+              "spec_block_accept_length": 0.0,
+              "spec_num_correct_drafts": 110,
+              "spec_num_proposed_drafts": 245,
+              "spec_verify_ct": 35,
+              "spec_correct_drafts_histogram": [
+                7,
+                6,
+                4,
+                2,
+                5,
+                3,
+                1,
+                7
+              ],
+              "spec_cap_lens_histogram": []
+            }
+          }
+        }
+      ],
+      "turn": 1,
+      "cache_prompt_requested": null,
+      "prompt_tokens": 32999,
+      "cached_prompt_tokens": null,
+      "new_prompt_tokens": null,
+      "tool_result": {
+        "name": "alder",
+        "code": "code_00",
+        "value": 11,
+        "next_name": "birch",
+        "payload": "Release record alder verified."
+      }
+    },
+    {
+      "wall_s": 0.8658738659996743,
+      "ttft_s": 0.8645418279993464,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "Continue with birch.",
+      "tool_calls": [
+        {
+          "id": "call_e342619f0434432187e56aa8",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\": \"birch\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 33200,
+        "total_tokens": 33244,
+        "completion_tokens": 44,
+        "prompt_tokens_details": null,
+        "reasoning_tokens": 8,
+        "completion_tokens_details": {
+          "reasoning_tokens": 8
+        }
+      },
+      "server_timings": [],
+      "sglext": [
+        {
+          "spec_tokens_details": {
+            "spec_accept_rate": 0.6428571428571429,
+            "spec_accept_length": 5.5,
+            "spec_cap_length": 0.0,
+            "spec_block_accept_length": 0.0,
+            "spec_num_correct_drafts": 36,
+            "spec_num_proposed_drafts": 56,
+            "spec_verify_ct": 8,
+            "spec_correct_drafts_histogram": [
+              2,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              5
+            ],
+            "spec_cap_lens_histogram": []
+          }
+        }
+      ],
+      "timing_spec_frames": [
+        {
+          "id": "a27b688ead164bd48a09fbcb142ac027",
+          "object": "chat.completion.chunk",
+          "created": 1795302261,
+          "model": "inkling-mini",
+          "choices": [],
+          "usage": null,
+          "sglext": {
+            "spec_tokens_details": {
+              "spec_accept_rate": 0.6428571428571429,
+              "spec_accept_length": 5.5,
+              "spec_cap_length": 0.0,
+              "spec_block_accept_length": 0.0,
+              "spec_num_correct_drafts": 36,
+              "spec_num_proposed_drafts": 56,
+              "spec_verify_ct": 8,
+              "spec_correct_drafts_histogram": [
+                2,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                5
+              ],
+              "spec_cap_lens_histogram": []
+            }
+          }
+        }
+      ],
+      "turn": 2,
+      "cache_prompt_requested": null,
+      "prompt_tokens": 33200,
+      "cached_prompt_tokens": null,
+      "new_prompt_tokens": null,
+      "tool_result": {
+        "name": "birch",
+        "code": "code_01",
+        "value": 48,
+        "next_name": "cobalt",
+        "payload": "Release record birch verified."
+      }
+    },
+    {
+      "wall_s": 0.1144953130005888,
+      "ttft_s": 0.11435779299972637,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "call_dddd699198944bd0b7a208e6",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\": \"cobalt\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 33300,
+        "total_tokens": 33336,
+        "completion_tokens": 36,
+        "prompt_tokens_details": null,
+        "reasoning_tokens": 35,
+        "completion_tokens_details": {
+          "reasoning_tokens": 35
+        }
+      },
+      "server_timings": [],
+      "sglext": [
+        {
+          "spec_tokens_details": {
+            "spec_accept_rate": 0.8857142857142857,
+            "spec_accept_length": 7.2,
+            "spec_cap_length": 0.0,
+            "spec_block_accept_length": 0.0,
+            "spec_num_correct_drafts": 31,
+            "spec_num_proposed_drafts": 35,
+            "spec_verify_ct": 5,
+            "spec_correct_drafts_histogram": [
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              4
+            ],
+            "spec_cap_lens_histogram": []
+          }
+        }
+      ],
+      "timing_spec_frames": [
+        {
+          "id": "e6f6df1f5d36434aa3a81d2e17912ae6",
+          "object": "chat.completion.chunk",
+          "created": 1795302262,
+          "model": "inkling-mini",
+          "choices": [],
+          "usage": null,
+          "sglext": {
+            "spec_tokens_details": {
+              "spec_accept_rate": 0.8857142857142857,
+              "spec_accept_length": 7.2,
+              "spec_cap_length": 0.0,
+              "spec_block_accept_length": 0.0,
+              "spec_num_correct_drafts": 31,
+              "spec_num_proposed_drafts": 35,
+              "spec_verify_ct": 5,
+              "spec_correct_drafts_histogram": [
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                4
+              ],
+              "spec_cap_lens_histogram": []
+            }
+          }
+        }
+      ],
+      "turn": 3,
+      "cache_prompt_requested": null,
+      "prompt_tokens": 33300,
+      "cached_prompt_tokens": null,
+      "new_prompt_tokens": null,
+      "tool_result": {
+        "name": "cobalt",
+        "code": "code_02",
+        "value": 85,
+        "next_name": "dune",
+        "payload": "Release record cobalt verified."
+      }
+    },
+    {
+      "wall_s": 0.1210306050015788,
+      "ttft_s": 0.1209004950014787,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "call_110ed0df21a24e19a9192c77",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\": \"dune\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 33392,
+        "total_tokens": 33428,
+        "completion_tokens": 36,
+        "prompt_tokens_details": null,
+        "reasoning_tokens": 35,
+        "completion_tokens_details": {
+          "reasoning_tokens": 35
+        }
+      },
+      "server_timings": [],
+      "sglext": [
+        {
+          "spec_tokens_details": {
+            "spec_accept_rate": 0.8857142857142857,
+            "spec_accept_length": 7.2,
+            "spec_cap_length": 0.0,
+            "spec_block_accept_length": 0.0,
+            "spec_num_correct_drafts": 31,
+            "spec_num_proposed_drafts": 35,
+            "spec_verify_ct": 5,
+            "spec_correct_drafts_histogram": [
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              4
+            ],
+            "spec_cap_lens_histogram": []
+          }
+        }
+      ],
+      "timing_spec_frames": [
+        {
+          "id": "d405bf1593094620ad3386fbaf85f03a",
+          "object": "chat.completion.chunk",
+          "created": 1795302262,
+          "model": "inkling-mini",
+          "choices": [],
+          "usage": null,
+          "sglext": {
+            "spec_tokens_details": {
+              "spec_accept_rate": 0.8857142857142857,
+              "spec_accept_length": 7.2,
+              "spec_cap_length": 0.0,
+              "spec_block_accept_length": 0.0,
+              "spec_num_correct_drafts": 31,
+              "spec_num_proposed_drafts": 35,
+              "spec_verify_ct": 5,
+              "spec_correct_drafts_histogram": [
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                4
+              ],
+              "spec_cap_lens_histogram": []
+            }
+          }
+        }
+      ],
+      "turn": 4,
+      "cache_prompt_requested": null,
+      "prompt_tokens": 33392,
+      "cached_prompt_tokens": null,
+      "new_prompt_tokens": null,
+      "tool_result": {
+        "name": "dune",
+        "code": "code_03",
+        "value": 21,
+        "next_name": "ember",
+        "payload": "Release record dune verified."
+      }
+    },
+    {
+      "wall_s": 0.1251852389996202,
+      "ttft_s": 0.1250252889985859,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "call_2b913f91f4654a708559358e",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\": \"ember\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 33484,
+        "total_tokens": 33520,
+        "completion_tokens": 36,
+        "prompt_tokens_details": null,
+        "reasoning_tokens": 35,
+        "completion_tokens_details": {
+          "reasoning_tokens": 35
+        }
+      },
+      "server_timings": [],
+      "sglext": [
+        {
+          "spec_tokens_details": {
+            "spec_accept_rate": 0.8857142857142857,
+            "spec_accept_length": 7.2,
+            "spec_cap_length": 0.0,
+            "spec_block_accept_length": 0.0,
+            "spec_num_correct_drafts": 31,
+            "spec_num_proposed_drafts": 35,
+            "spec_verify_ct": 5,
+            "spec_correct_drafts_histogram": [
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              4
+            ],
+            "spec_cap_lens_histogram": []
+          }
+        }
+      ],
+      "timing_spec_frames": [
+        {
+          "id": "d57f5e851d60465c8027634e185d06a7",
+          "object": "chat.completion.chunk",
+          "created": 1795302262,
+          "model": "inkling-mini",
+          "choices": [],
+          "usage": null,
+          "sglext": {
+            "spec_tokens_details": {
+              "spec_accept_rate": 0.8857142857142857,
+              "spec_accept_length": 7.2,
+              "spec_cap_length": 0.0,
+              "spec_block_accept_length": 0.0,
+              "spec_num_correct_drafts": 31,
+              "spec_num_proposed_drafts": 35,
+              "spec_verify_ct": 5,
+              "spec_correct_drafts_histogram": [
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                4
+              ],
+              "spec_cap_lens_histogram": []
+            }
+          }
+        }
+      ],
+      "turn": 5,
+      "cache_prompt_requested": null,
+      "prompt_tokens": 33484,
+      "cached_prompt_tokens": null,
+      "new_prompt_tokens": null,
+      "tool_result": {
+        "name": "ember",
+        "code": "code_04",
+        "value": 58,
+        "next_name": "fjord",
+        "payload": "Release record ember verified."
+      }
+    },
+    {
+      "wall_s": 0.12599551699895528,
+      "ttft_s": 0.1258970369999588,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "call_9d0447a515d94cfcb90160bd",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\": \"fjord\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 33575,
+        "total_tokens": 33611,
+        "completion_tokens": 36,
+        "prompt_tokens_details": null,
+        "reasoning_tokens": 35,
+        "completion_tokens_details": {
+          "reasoning_tokens": 35
+        }
+      },
+      "server_timings": [],
+      "sglext": [
+        {
+          "spec_tokens_details": {
+            "spec_accept_rate": 0.8857142857142857,
+            "spec_accept_length": 7.2,
+            "spec_cap_length": 0.0,
+            "spec_block_accept_length": 0.0,
+            "spec_num_correct_drafts": 31,
+            "spec_num_proposed_drafts": 35,
+            "spec_verify_ct": 5,
+            "spec_correct_drafts_histogram": [
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              4
+            ],
+            "spec_cap_lens_histogram": []
+          }
+        }
+      ],
+      "timing_spec_frames": [
+        {
+          "id": "9b31b48fba17449c94c72fb0619f0d34",
+          "object": "chat.completion.chunk",
+          "created": 1795302262,
+          "model": "inkling-mini",
+          "choices": [],
+          "usage": null,
+          "sglext": {
+            "spec_tokens_details": {
+              "spec_accept_rate": 0.8857142857142857,
+              "spec_accept_length": 7.2,
+              "spec_cap_length": 0.0,
+              "spec_block_accept_length": 0.0,
+              "spec_num_correct_drafts": 31,
+              "spec_num_proposed_drafts": 35,
+              "spec_verify_ct": 5,
+              "spec_correct_drafts_histogram": [
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                4
+              ],
+              "spec_cap_lens_histogram": []
+            }
+          }
+        }
+      ],
+      "turn": 6,
+      "cache_prompt_requested": null,
+      "prompt_tokens": 33575,
+      "cached_prompt_tokens": null,
+      "new_prompt_tokens": null,
+      "tool_result": {
+        "name": "fjord",
+        "code": "code_05",
+        "value": 95,
+        "next_name": "grove",
+        "payload": "Release record fjord verified."
+      }
+    },
+    {
+      "wall_s": 0.1230045419997623,
+      "ttft_s": 0.12290370200025791,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "call_aac0a68b57fd4103bc284b97",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\": \"grove\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 33667,
+        "total_tokens": 33703,
+        "completion_tokens": 36,
+        "prompt_tokens_details": null,
+        "reasoning_tokens": 35,
+        "completion_tokens_details": {
+          "reasoning_tokens": 35
+        }
+      },
+      "server_timings": [],
+      "sglext": [
+        {
+          "spec_tokens_details": {
+            "spec_accept_rate": 0.8857142857142857,
+            "spec_accept_length": 7.2,
+            "spec_cap_length": 0.0,
+            "spec_block_accept_length": 0.0,
+            "spec_num_correct_drafts": 31,
+            "spec_num_proposed_drafts": 35,
+            "spec_verify_ct": 5,
+            "spec_correct_drafts_histogram": [
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              4
+            ],
+            "spec_cap_lens_histogram": []
+          }
+        }
+      ],
+      "timing_spec_frames": [
+        {
+          "id": "f8d221965ded4cec883de681e2928e24",
+          "object": "chat.completion.chunk",
+          "created": 1795302262,
+          "model": "inkling-mini",
+          "choices": [],
+          "usage": null,
+          "sglext": {
+            "spec_tokens_details": {
+              "spec_accept_rate": 0.8857142857142857,
+              "spec_accept_length": 7.2,
+              "spec_cap_length": 0.0,
+              "spec_block_accept_length": 0.0,
+              "spec_num_correct_drafts": 31,
+              "spec_num_proposed_drafts": 35,
+              "spec_verify_ct": 5,
+              "spec_correct_drafts_histogram": [
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                4
+              ],
+              "spec_cap_lens_histogram": []
+            }
+          }
+        }
+      ],
+      "turn": 7,
+      "cache_prompt_requested": null,
+      "prompt_tokens": 33667,
+      "cached_prompt_tokens": null,
+      "new_prompt_tokens": null,
+      "tool_result": {
+        "name": "grove",
+        "code": "code_06",
+        "value": 31,
+        "next_name": "harbor",
+        "payload": "Release record grove verified."
+      }
+    },
+    {
+      "wall_s": 0.11924304600142932,
+      "ttft_s": 0.11912803700033692,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "call_84b8d04151384c6e94725cb5",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\": \"harbor\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 33759,
+        "total_tokens": 33795,
+        "completion_tokens": 36,
+        "prompt_tokens_details": null,
+        "reasoning_tokens": 35,
+        "completion_tokens_details": {
+          "reasoning_tokens": 35
+        }
+      },
+      "server_timings": [],
+      "sglext": [
+        {
+          "spec_tokens_details": {
+            "spec_accept_rate": 0.8857142857142857,
+            "spec_accept_length": 7.2,
+            "spec_cap_length": 0.0,
+            "spec_block_accept_length": 0.0,
+            "spec_num_correct_drafts": 31,
+            "spec_num_proposed_drafts": 35,
+            "spec_verify_ct": 5,
+            "spec_correct_drafts_histogram": [
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              4
+            ],
+            "spec_cap_lens_histogram": []
+          }
+        }
+      ],
+      "timing_spec_frames": [
+        {
+          "id": "81e2744fd5cd4db0aba3afdce1b8eddb",
+          "object": "chat.completion.chunk",
+          "created": 1795302262,
+          "model": "inkling-mini",
+          "choices": [],
+          "usage": null,
+          "sglext": {
+            "spec_tokens_details": {
+              "spec_accept_rate": 0.8857142857142857,
+              "spec_accept_length": 7.2,
+              "spec_cap_length": 0.0,
+              "spec_block_accept_length": 0.0,
+              "spec_num_correct_drafts": 31,
+              "spec_num_proposed_drafts": 35,
+              "spec_verify_ct": 5,
+              "spec_correct_drafts_histogram": [
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                4
+              ],
+              "spec_cap_lens_histogram": []
+            }
+          }
+        }
+      ],
+      "turn": 8,
+      "cache_prompt_requested": null,
+      "prompt_tokens": 33759,
+      "cached_prompt_tokens": null,
+      "new_prompt_tokens": null,
+      "tool_result": {
+        "name": "harbor",
+        "code": "code_07",
+        "value": 68,
+        "next_name": "indigo",
+        "payload": "Release record harbor verified."
+      }
+    },
+    {
+      "wall_s": 0.11398863400063419,
+      "ttft_s": 0.11387990399998671,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "call_0540e3badf0941058aa32b4a",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\": \"indigo\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 33851,
+        "total_tokens": 33887,
+        "completion_tokens": 36,
+        "prompt_tokens_details": null,
+        "reasoning_tokens": 35,
+        "completion_tokens_details": {
+          "reasoning_tokens": 35
+        }
+      },
+      "server_timings": [],
+      "sglext": [
+        {
+          "spec_tokens_details": {
+            "spec_accept_rate": 0.8857142857142857,
+            "spec_accept_length": 7.2,
+            "spec_cap_length": 0.0,
+            "spec_block_accept_length": 0.0,
+            "spec_num_correct_drafts": 31,
+            "spec_num_proposed_drafts": 35,
+            "spec_verify_ct": 5,
+            "spec_correct_drafts_histogram": [
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              4
+            ],
+            "spec_cap_lens_histogram": []
+          }
+        }
+      ],
+      "timing_spec_frames": [
+        {
+          "id": "b64f33772b254913b74eec301f168cef",
+          "object": "chat.completion.chunk",
+          "created": 1795302263,
+          "model": "inkling-mini",
+          "choices": [],
+          "usage": null,
+          "sglext": {
+            "spec_tokens_details": {
+              "spec_accept_rate": 0.8857142857142857,
+              "spec_accept_length": 7.2,
+              "spec_cap_length": 0.0,
+              "spec_block_accept_length": 0.0,
+              "spec_num_correct_drafts": 31,
+              "spec_num_proposed_drafts": 35,
+              "spec_verify_ct": 5,
+              "spec_correct_drafts_histogram": [
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                4
+              ],
+              "spec_cap_lens_histogram": []
+            }
+          }
+        }
+      ],
+      "turn": 9,
+      "cache_prompt_requested": null,
+      "prompt_tokens": 33851,
+      "cached_prompt_tokens": null,
+      "new_prompt_tokens": null,
+      "tool_result": {
+        "name": "indigo",
+        "code": "code_08",
+        "value": 4,
+        "next_name": "juniper",
+        "payload": "Release record indigo verified."
+      }
+    },
+    {
+      "wall_s": 0.1203283550003107,
+      "ttft_s": 0.1202187260005303,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "call_ab321f7f03bf419daa0dad29",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\": \"juniper\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 33943,
+        "total_tokens": 33979,
+        "completion_tokens": 36,
+        "prompt_tokens_details": null,
+        "reasoning_tokens": 35,
+        "completion_tokens_details": {
+          "reasoning_tokens": 35
+        }
+      },
+      "server_timings": [],
+      "sglext": [
+        {
+          "spec_tokens_details": {
+            "spec_accept_rate": 0.8857142857142857,
+            "spec_accept_length": 7.2,
+            "spec_cap_length": 0.0,
+            "spec_block_accept_length": 0.0,
+            "spec_num_correct_drafts": 31,
+            "spec_num_proposed_drafts": 35,
+            "spec_verify_ct": 5,
+            "spec_correct_drafts_histogram": [
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              4
+            ],
+            "spec_cap_lens_histogram": []
+          }
+        }
+      ],
+      "timing_spec_frames": [
+        {
+          "id": "8b49e784170d4b239ee7244f877e7df1",
+          "object": "chat.completion.chunk",
+          "created": 1795302263,
+          "model": "inkling-mini",
+          "choices": [],
+          "usage": null,
+          "sglext": {
+            "spec_tokens_details": {
+              "spec_accept_rate": 0.8857142857142857,
+              "spec_accept_length": 7.2,
+              "spec_cap_length": 0.0,
+              "spec_block_accept_length": 0.0,
+              "spec_num_correct_drafts": 31,
+              "spec_num_proposed_drafts": 35,
+              "spec_verify_ct": 5,
+              "spec_correct_drafts_histogram": [
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                4
+              ],
+              "spec_cap_lens_histogram": []
+            }
+          }
+        }
+      ],
+      "turn": 10,
+      "cache_prompt_requested": null,
+      "prompt_tokens": 33943,
+      "cached_prompt_tokens": null,
+      "new_prompt_tokens": null,
+      "tool_result": {
+        "name": "juniper",
+        "code": "code_09",
+        "value": 41,
+        "next_name": "kestrel",
+        "payload": "Release record juniper verified."
+      }
+    },
+    {
+      "wall_s": 0.11772819900033937,
+      "ttft_s": 0.11760861899892916,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "call_27d9caf1e8ed44bb9f5d7670",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\": \"kestrel\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 34036,
+        "total_tokens": 34073,
+        "completion_tokens": 37,
+        "prompt_tokens_details": null,
+        "reasoning_tokens": 36,
+        "completion_tokens_details": {
+          "reasoning_tokens": 36
+        }
+      },
+      "server_timings": [],
+      "sglext": [
+        {
+          "spec_tokens_details": {
+            "spec_accept_rate": 0.9142857142857143,
+            "spec_accept_length": 7.4,
+            "spec_cap_length": 0.0,
+            "spec_block_accept_length": 0.0,
+            "spec_num_correct_drafts": 32,
+            "spec_num_proposed_drafts": 35,
+            "spec_verify_ct": 5,
+            "spec_correct_drafts_histogram": [
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              4
+            ],
+            "spec_cap_lens_histogram": []
+          }
+        }
+      ],
+      "timing_spec_frames": [
+        {
+          "id": "efc2151512aa4d9f8b224f1d372732a3",
+          "object": "chat.completion.chunk",
+          "created": 1795302263,
+          "model": "inkling-mini",
+          "choices": [],
+          "usage": null,
+          "sglext": {
+            "spec_tokens_details": {
+              "spec_accept_rate": 0.9142857142857143,
+              "spec_accept_length": 7.4,
+              "spec_cap_length": 0.0,
+              "spec_block_accept_length": 0.0,
+              "spec_num_correct_drafts": 32,
+              "spec_num_proposed_drafts": 35,
+              "spec_verify_ct": 5,
+              "spec_correct_drafts_histogram": [
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                4
+              ],
+              "spec_cap_lens_histogram": []
+            }
+          }
+        }
+      ],
+      "turn": 11,
+      "cache_prompt_requested": null,
+      "prompt_tokens": 34036,
+      "cached_prompt_tokens": null,
+      "new_prompt_tokens": null,
+      "tool_result": {
+        "name": "kestrel",
+        "code": "code_10",
+        "value": 78,
+        "next_name": "lantern",
+        "payload": "Release record kestrel verified."
+      }
+    },
+    {
+      "wall_s": 0.11473894300070242,
+      "ttft_s": 0.1146072629999253,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "call_3770b6e700374e24aabd979c",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\": \"lantern\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 34131,
+        "total_tokens": 34167,
+        "completion_tokens": 36,
+        "prompt_tokens_details": null,
+        "reasoning_tokens": 35,
+        "completion_tokens_details": {
+          "reasoning_tokens": 35
+        }
+      },
+      "server_timings": [],
+      "sglext": [
+        {
+          "spec_tokens_details": {
+            "spec_accept_rate": 0.8857142857142857,
+            "spec_accept_length": 7.2,
+            "spec_cap_length": 0.0,
+            "spec_block_accept_length": 0.0,
+            "spec_num_correct_drafts": 31,
+            "spec_num_proposed_drafts": 35,
+            "spec_verify_ct": 5,
+            "spec_correct_drafts_histogram": [
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              4
+            ],
+            "spec_cap_lens_histogram": []
+          }
+        }
+      ],
+      "timing_spec_frames": [
+        {
+          "id": "53ffc7755e0f4b579eddd386efc68bd1",
+          "object": "chat.completion.chunk",
+          "created": 1795302263,
+          "model": "inkling-mini",
+          "choices": [],
+          "usage": null,
+          "sglext": {
+            "spec_tokens_details": {
+              "spec_accept_rate": 0.8857142857142857,
+              "spec_accept_length": 7.2,
+              "spec_cap_length": 0.0,
+              "spec_block_accept_length": 0.0,
+              "spec_num_correct_drafts": 31,
+              "spec_num_proposed_drafts": 35,
+              "spec_verify_ct": 5,
+              "spec_correct_drafts_histogram": [
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                4
+              ],
+              "spec_cap_lens_histogram": []
+            }
+          }
+        }
+      ],
+      "turn": 12,
+      "cache_prompt_requested": null,
+      "prompt_tokens": 34131,
+      "cached_prompt_tokens": null,
+      "new_prompt_tokens": null,
+      "tool_result": {
+        "name": "lantern",
+        "code": "code_11",
+        "value": 14,
+        "next_name": "meadow",
+        "payload": "Release record lantern verified."
+      }
+    },
+    {
+      "wall_s": 0.12009633599882363,
+      "ttft_s": 0.11997667600007844,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "call_c83c4b0d7f5b4835acbac0be",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\": \"meadow\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 34223,
+        "total_tokens": 34259,
+        "completion_tokens": 36,
+        "prompt_tokens_details": null,
+        "reasoning_tokens": 35,
+        "completion_tokens_details": {
+          "reasoning_tokens": 35
+        }
+      },
+      "server_timings": [],
+      "sglext": [
+        {
+          "spec_tokens_details": {
+            "spec_accept_rate": 0.8857142857142857,
+            "spec_accept_length": 7.2,
+            "spec_cap_length": 0.0,
+            "spec_block_accept_length": 0.0,
+            "spec_num_correct_drafts": 31,
+            "spec_num_proposed_drafts": 35,
+            "spec_verify_ct": 5,
+            "spec_correct_drafts_histogram": [
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              4
+            ],
+            "spec_cap_lens_histogram": []
+          }
+        }
+      ],
+      "timing_spec_frames": [
+        {
+          "id": "dcc8166f49bf4718bcd46ead34bc512b",
+          "object": "chat.completion.chunk",
+          "created": 1795302263,
+          "model": "inkling-mini",
+          "choices": [],
+          "usage": null,
+          "sglext": {
+            "spec_tokens_details": {
+              "spec_accept_rate": 0.8857142857142857,
+              "spec_accept_length": 7.2,
+              "spec_cap_length": 0.0,
+              "spec_block_accept_length": 0.0,
+              "spec_num_correct_drafts": 31,
+              "spec_num_proposed_drafts": 35,
+              "spec_verify_ct": 5,
+              "spec_correct_drafts_histogram": [
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                4
+              ],
+              "spec_cap_lens_histogram": []
+            }
+          }
+        }
+      ],
+      "turn": 13,
+      "cache_prompt_requested": null,
+      "prompt_tokens": 34223,
+      "cached_prompt_tokens": null,
+      "new_prompt_tokens": null,
+      "tool_result": {
+        "name": "meadow",
+        "code": "code_12",
+        "value": 51,
+        "next_name": "north",
+        "payload": "Release record meadow verified."
+      }
+    },
+    {
+      "wall_s": 0.11932584699934523,
+      "ttft_s": 0.11923012700026447,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "call_f63e00128d7746aaa6acad9e",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\": \"north\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 34315,
+        "total_tokens": 34351,
+        "completion_tokens": 36,
+        "prompt_tokens_details": null,
+        "reasoning_tokens": 35,
+        "completion_tokens_details": {
+          "reasoning_tokens": 35
+        }
+      },
+      "server_timings": [],
+      "sglext": [
+        {
+          "spec_tokens_details": {
+            "spec_accept_rate": 0.8857142857142857,
+            "spec_accept_length": 7.2,
+            "spec_cap_length": 0.0,
+            "spec_block_accept_length": 0.0,
+            "spec_num_correct_drafts": 31,
+            "spec_num_proposed_drafts": 35,
+            "spec_verify_ct": 5,
+            "spec_correct_drafts_histogram": [
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              4
+            ],
+            "spec_cap_lens_histogram": []
+          }
+        }
+      ],
+      "timing_spec_frames": [
+        {
+          "id": "7fb12da26d1a4bba89520a0f66b11197",
+          "object": "chat.completion.chunk",
+          "created": 1795302263,
+          "model": "inkling-mini",
+          "choices": [],
+          "usage": null,
+          "sglext": {
+            "spec_tokens_details": {
+              "spec_accept_rate": 0.8857142857142857,
+              "spec_accept_length": 7.2,
+              "spec_cap_length": 0.0,
+              "spec_block_accept_length": 0.0,
+              "spec_num_correct_drafts": 31,
+              "spec_num_proposed_drafts": 35,
+              "spec_verify_ct": 5,
+              "spec_correct_drafts_histogram": [
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                4
+              ],
+              "spec_cap_lens_histogram": []
+            }
+          }
+        }
+      ],
+      "turn": 14,
+      "cache_prompt_requested": null,
+      "prompt_tokens": 34315,
+      "cached_prompt_tokens": null,
+      "new_prompt_tokens": null,
+      "tool_result": {
+        "name": "north",
+        "code": "code_13",
+        "value": 88,
+        "next_name": "onyx",
+        "payload": "Release record north verified."
+      }
+    },
+    {
+      "wall_s": 0.11798479800017958,
+      "ttft_s": 0.1178263390011125,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "call_0b8f04f134034d50aa1bb751",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\": \"onyx\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 34407,
+        "total_tokens": 34444,
+        "completion_tokens": 37,
+        "prompt_tokens_details": null,
+        "reasoning_tokens": 36,
+        "completion_tokens_details": {
+          "reasoning_tokens": 36
+        }
+      },
+      "server_timings": [],
+      "sglext": [
+        {
+          "spec_tokens_details": {
+            "spec_accept_rate": 0.9142857142857143,
+            "spec_accept_length": 7.4,
+            "spec_cap_length": 0.0,
+            "spec_block_accept_length": 0.0,
+            "spec_num_correct_drafts": 32,
+            "spec_num_proposed_drafts": 35,
+            "spec_verify_ct": 5,
+            "spec_correct_drafts_histogram": [
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              4
+            ],
+            "spec_cap_lens_histogram": []
+          }
+        }
+      ],
+      "timing_spec_frames": [
+        {
+          "id": "0b5e22f434644e2ea1fe21a0f6b28371",
+          "object": "chat.completion.chunk",
+          "created": 1795302263,
+          "model": "inkling-mini",
+          "choices": [],
+          "usage": null,
+          "sglext": {
+            "spec_tokens_details": {
+              "spec_accept_rate": 0.9142857142857143,
+              "spec_accept_length": 7.4,
+              "spec_cap_length": 0.0,
+              "spec_block_accept_length": 0.0,
+              "spec_num_correct_drafts": 32,
+              "spec_num_proposed_drafts": 35,
+              "spec_verify_ct": 5,
+              "spec_correct_drafts_histogram": [
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                4
+              ],
+              "spec_cap_lens_histogram": []
+            }
+          }
+        }
+      ],
+      "turn": 15,
+      "cache_prompt_requested": null,
+      "prompt_tokens": 34407,
+      "cached_prompt_tokens": null,
+      "new_prompt_tokens": null,
+      "tool_result": {
+        "name": "onyx",
+        "code": "code_14",
+        "value": 24,
+        "next_name": "pine",
+        "payload": "Release record onyx verified."
+      }
+    },
+    {
+      "wall_s": 0.12170160399909946,
+      "ttft_s": 0.12151428399920405,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "call_737410b9e874496faed1dad9",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\": \"pine\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 34501,
+        "total_tokens": 34537,
+        "completion_tokens": 36,
+        "prompt_tokens_details": null,
+        "reasoning_tokens": 35,
+        "completion_tokens_details": {
+          "reasoning_tokens": 35
+        }
+      },
+      "server_timings": [],
+      "sglext": [
+        {
+          "spec_tokens_details": {
+            "spec_accept_rate": 0.8857142857142857,
+            "spec_accept_length": 7.2,
+            "spec_cap_length": 0.0,
+            "spec_block_accept_length": 0.0,
+            "spec_num_correct_drafts": 31,
+            "spec_num_proposed_drafts": 35,
+            "spec_verify_ct": 5,
+            "spec_correct_drafts_histogram": [
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              4
+            ],
+            "spec_cap_lens_histogram": []
+          }
+        }
+      ],
+      "timing_spec_frames": [
+        {
+          "id": "f89d9f15e6704a07a8837b9063dfdf6e",
+          "object": "chat.completion.chunk",
+          "created": 1795302263,
+          "model": "inkling-mini",
+          "choices": [],
+          "usage": null,
+          "sglext": {
+            "spec_tokens_details": {
+              "spec_accept_rate": 0.8857142857142857,
+              "spec_accept_length": 7.2,
+              "spec_cap_length": 0.0,
+              "spec_block_accept_length": 0.0,
+              "spec_num_correct_drafts": 31,
+              "spec_num_proposed_drafts": 35,
+              "spec_verify_ct": 5,
+              "spec_correct_drafts_histogram": [
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                4
+              ],
+              "spec_cap_lens_histogram": []
+            }
+          }
+        }
+      ],
+      "turn": 16,
+      "cache_prompt_requested": null,
+      "prompt_tokens": 34501,
+      "cached_prompt_tokens": null,
+      "new_prompt_tokens": null,
+      "tool_result": {
+        "name": "pine",
+        "code": "code_15",
+        "value": 61,
+        "next_name": null,
+        "payload": "Release record pine verified."
+      }
+    },
+    {
+      "wall_s": 0.3807549699995434,
+      "ttft_s": 0.0647826519998489,
+      "first_content_s": 0.3263712139996642,
+      "answer": "{\"name\":\"fjord\",\"code\":\"code_05\",\"value\":95}",
+      "reasoning": "Sixteen records read: alder 11, birch 48, cobalt 85, dune 21, ember 58, fjord 95, grove 31, harbor 68, indigo 4, juniper 41, kestrel 78, lantern 14, meadow 51, north 88, onyx 24, pine 61.\n\nLargest value: fjord 95. Return JSON with name, code, value.",
+      "tool_calls": [],
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 34590,
+        "total_tokens": 34724,
+        "completion_tokens": 134,
+        "prompt_tokens_details": null,
+        "reasoning_tokens": 105,
+        "completion_tokens_details": {
+          "reasoning_tokens": 105
+        }
+      },
+      "server_timings": [],
+      "sglext": [
+        {
+          "spec_tokens_details": {
+            "spec_accept_rate": 0.6285714285714286,
+            "spec_accept_length": 5.36,
+            "spec_cap_length": 0.0,
+            "spec_block_accept_length": 0.0,
+            "spec_num_correct_drafts": 110,
+            "spec_num_proposed_drafts": 175,
+            "spec_verify_ct": 25,
+            "spec_correct_drafts_histogram": [
+              1,
+              5,
+              2,
+              1,
+              2,
+              2,
+              4,
+              8
+            ],
+            "spec_cap_lens_histogram": []
+          }
+        }
+      ],
+      "timing_spec_frames": [
+        {
+          "id": "b3ba7d95fa174c42914316937e8331cb",
+          "object": "chat.completion.chunk",
+          "created": 1795302264,
+          "model": "inkling-mini",
+          "choices": [],
+          "usage": null,
+          "sglext": {
+            "spec_tokens_details": {
+              "spec_accept_rate": 0.6285714285714286,
+              "spec_accept_length": 5.36,
+              "spec_cap_length": 0.0,
+              "spec_block_accept_length": 0.0,
+              "spec_num_correct_drafts": 110,
+              "spec_num_proposed_drafts": 175,
+              "spec_verify_ct": 25,
+              "spec_correct_drafts_histogram": [
+                1,
+                5,
+                2,
+                1,
+                2,
+                2,
+                4,
+                8
+              ],
+              "spec_cap_lens_histogram": []
+            }
+          }
+        }
+      ],
+      "turn": 17,
+      "cache_prompt_requested": null,
+      "prompt_tokens": 34590,
+      "cached_prompt_tokens": null,
+      "new_prompt_tokens": null
+    }
+  ],
+  "status": "passed",
+  "error": null,
+  "chain_length": 16,
+  "session_wall_s": 5.823263645999759,
+  "first_request_wall_s": 2.898273266000615,
+  "followup_wall_s": 2.921475814000587,
+  "total_prompt_tokens": 575373,
+  "total_completion_tokens": 828
+}

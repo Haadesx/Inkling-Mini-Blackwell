@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# Build isolated baseline and patched llama.cpp trees, pinned to the same revision.
+set -euo pipefail
+root=$(cd "$(dirname "$0")/.." && pwd)
+work=${INKLING_WORK:-"$root/.work/release"}
+image=${INKLING_BUILDER:-inkling-mini-blackwell-builder:v0.1}
+base=e6d624b9a4b95c6b52f5ca384d70b75581f9821a
+mkdir -p "$work"
+work=$(cd "$work" && pwd)
+if [[ -z "${INKLING_BUILDER:-}" ]]; then
+    docker build -t "$image" "$root/repro"
+fi
+for variant in base patch; do
+    src="$work/src-$variant"
+    bin="$work/build-$variant"
+    if [[ ! -d "$src/.git" ]]; then
+        git init -q "$src"
+        git -C "$src" fetch -q --depth 1 https://github.com/ggml-org/llama.cpp.git "$base"
+        git -C "$src" checkout -q --detach FETCH_HEAD
+    fi
+    [[ "$(git -C "$src" rev-parse HEAD)" == "$base" ]] || { echo "Unexpected revision in $src" >&2; exit 1; }
+    if [[ "$variant" == patch ]]; then
+        patch="$root/patches/sm120-short-reduction.patch"
+        if git -C "$src" apply --check "$patch" 2>/dev/null; then
+            git -C "$src" apply "$patch"
+        fi
+        if ! git -C "$src" diff --no-ext-diff --relative | cmp -s - "$patch"; then
+            echo "Unexpected changes in $src. Select a fresh INKLING_WORK directory." >&2
+            exit 1
+        fi
+    else
+        git -C "$src" diff --quiet HEAD || { echo "Baseline has local changes in $src" >&2; exit 1; }
+    fi
+    mkdir -p "$bin"
+    # Link against the read-only CUDA driver from this host. Compilation does not load the GPU.
+    driver=$(ldconfig -p | awk '/libcuda\.so\.1 .*x86-64/ && !path {path=$NF} END {print path}')
+    [[ -r "$driver" ]] || { echo 'Install a working Linux NVIDIA driver with libcuda.so.1.' >&2; exit 1; }
+    docker run --rm --user "$(id -u):$(id -g)" -e JOBS="${JOBS:-10}" \
+        -v "$driver:/usr/lib/x86_64-linux-gnu/libcuda.so.1:ro" \
+        -v "$src:/src/llama.cpp:ro" -v "$bin:/src/build-base" \
+        --entrypoint bash "$image" -ec '
+          cmake -S /src/llama.cpp -B /src/build-base -DCMAKE_BUILD_TYPE=Release \
+              -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=120 -DGGML_NATIVE=OFF \
+              -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_UI=OFF -DLLAMA_USE_PREBUILT_UI=OFF
+          cmake --build /src/build-base --target llama-bench llama-server --parallel "$JOBS"'
+done

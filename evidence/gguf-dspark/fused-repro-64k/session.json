@@ -1,0 +1,1474 @@
+{
+  "version": 1,
+  "engine": "llama",
+  "model": "inkling-mini",
+  "run_id": "agent-session-v1",
+  "size": "64k",
+  "prefix_content_tokens": 65536,
+  "prefix_sha256": "9420955e0ed4e47f9d8d17906081d7fb96564536585814bea1c3e871a24db210",
+  "user_message_sha256": "42e65ba1bf214243ba3f1151a73afc3f416db909bd46609fdb09f5aedda6fdba",
+  "tokenizer_sha256": "7f332727f9a3f093dd452a39cc978e6757627e5dad1b0673aa4e75174f236dd6",
+  "timestamp_utc": "2026-11-21T23:04:54.620494+00:00",
+  "max_tokens": 512,
+  "seed": 42,
+  "reasoning_effort": "low",
+  "tool_schema": {
+    "type": "function",
+    "function": {
+      "name": "read_release_record",
+      "description": "Read one release record by exact name. The returned next_name identifies the next record; null means the chain ends.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "cache_policy": "first off, followups on",
+  "turns": [
+    {
+      "wall_s": 25.381885876000524,
+      "ttft_s": 24.36554425599934,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "The user wants me to follow a release-record chain. Start with name \"alder\". Call read_release_record exactly once for each record, following next_name until null. After reading all sixteen records, identify the record with the largest value and return ONLY JSON with keys \"name\", \"code\", and \"value\".\n\nLet me start.",
+      "tool_calls": [
+        {
+          "id": "tVtwwrlEi8mV9Ka8LxbZwlXo96pBUmw1",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\":\"alder\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "completion_tokens": 118,
+        "prompt_tokens": 65767,
+        "total_tokens": 65885,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "server_timings": [
+        {
+          "cache_n": 0,
+          "prompt_n": 65767,
+          "prompt_ms": 24232.296,
+          "prompt_per_token_ms": 0.36845676403059285,
+          "prompt_per_second": 2714.0226415194006,
+          "predicted_n": 118,
+          "predicted_ms": 1068.819,
+          "predicted_per_token_ms": 9.135205128205127,
+          "predicted_per_second": 109.46661689210241,
+          "draft_n": 182,
+          "draft_n_accepted": 91
+        }
+      ],
+      "sglext": [],
+      "timing_spec_frames": [
+        {
+          "choices": [],
+          "created": 1795302320,
+          "id": "chatcmpl-RfNvr6deWtUgRE0pGzBSKk7SyeCikzOo",
+          "model": "inkling-mini",
+          "system_fingerprint": "b1-e6d624b",
+          "object": "chat.completion.chunk",
+          "usage": {
+            "completion_tokens": 118,
+            "prompt_tokens": 65767,
+            "total_tokens": 65885,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          },
+          "timings": {
+            "cache_n": 0,
+            "prompt_n": 65767,
+            "prompt_ms": 24232.296,
+            "prompt_per_token_ms": 0.36845676403059285,
+            "prompt_per_second": 2714.0226415194006,
+            "predicted_n": 118,
+            "predicted_ms": 1068.819,
+            "predicted_per_token_ms": 9.135205128205127,
+            "predicted_per_second": 109.46661689210241,
+            "draft_n": 182,
+            "draft_n_accepted": 91
+          }
+        }
+      ],
+      "turn": 1,
+      "cache_prompt_requested": false,
+      "prompt_tokens": 65767,
+      "cached_prompt_tokens": 0,
+      "new_prompt_tokens": 65767,
+      "tool_result": {
+        "name": "alder",
+        "code": "code_00",
+        "value": 11,
+        "next_name": "birch",
+        "payload": "Release record alder verified."
+      }
+    },
+    {
+      "wall_s": 0.5999353200004407,
+      "ttft_s": 0.3598824680011603,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "Next: birch.",
+      "tool_calls": [
+        {
+          "id": "jvfC7fINRoKGqNdUdJZxY3ZXfV2ultfM",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\":\"birch\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "completion_tokens": 44,
+        "prompt_tokens": 65942,
+        "total_tokens": 65986,
+        "prompt_tokens_details": {
+          "cached_tokens": 65884
+        }
+      },
+      "server_timings": [
+        {
+          "cache_n": 65884,
+          "prompt_n": 58,
+          "prompt_ms": 191.804,
+          "prompt_per_token_ms": 3.3069655172413794,
+          "prompt_per_second": 302.39202519238387,
+          "predicted_n": 44,
+          "predicted_ms": 328.441,
+          "predicted_per_token_ms": 7.638162790697674,
+          "predicted_per_second": 130.9215353746944,
+          "draft_n": 56,
+          "draft_n_accepted": 35
+        }
+      ],
+      "sglext": [],
+      "timing_spec_frames": [
+        {
+          "choices": [],
+          "created": 1795302320,
+          "id": "chatcmpl-FHadEe4Td6voKwiy5CRjuDN8iAhpjMj8",
+          "model": "inkling-mini",
+          "system_fingerprint": "b1-e6d624b",
+          "object": "chat.completion.chunk",
+          "usage": {
+            "completion_tokens": 44,
+            "prompt_tokens": 65942,
+            "total_tokens": 65986,
+            "prompt_tokens_details": {
+              "cached_tokens": 65884
+            }
+          },
+          "timings": {
+            "cache_n": 65884,
+            "prompt_n": 58,
+            "prompt_ms": 191.804,
+            "prompt_per_token_ms": 3.3069655172413794,
+            "prompt_per_second": 302.39202519238387,
+            "predicted_n": 44,
+            "predicted_ms": 328.441,
+            "predicted_per_token_ms": 7.638162790697674,
+            "predicted_per_second": 130.9215353746944,
+            "draft_n": 56,
+            "draft_n_accepted": 35
+          }
+        }
+      ],
+      "turn": 2,
+      "cache_prompt_requested": true,
+      "prompt_tokens": 65942,
+      "cached_prompt_tokens": 65884,
+      "new_prompt_tokens": 58,
+      "tool_result": {
+        "name": "birch",
+        "code": "code_01",
+        "value": 48,
+        "next_name": "cobalt",
+        "payload": "Release record birch verified."
+      }
+    },
+    {
+      "wall_s": 0.4775764270016225,
+      "ttft_s": 0.39777351600059774,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "QW4KCK9WjdZ1zxfsTYYNdkgDmevIsyFH",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\":\"cobalt\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "completion_tokens": 36,
+        "prompt_tokens": 66042,
+        "total_tokens": 66078,
+        "prompt_tokens_details": {
+          "cached_tokens": 65985
+        }
+      },
+      "server_timings": [
+        {
+          "cache_n": 65985,
+          "prompt_n": 57,
+          "prompt_ms": 185.367,
+          "prompt_per_token_ms": 3.2520526315789473,
+          "prompt_per_second": 307.4980983670233,
+          "predicted_n": 36,
+          "predicted_ms": 208.816,
+          "predicted_per_token_ms": 5.966171428571428,
+          "predicted_per_second": 167.6116772661099,
+          "draft_n": 35,
+          "draft_n_accepted": 30
+        }
+      ],
+      "sglext": [],
+      "timing_spec_frames": [
+        {
+          "choices": [],
+          "created": 1795302321,
+          "id": "chatcmpl-wie7BybMEFLT5mXwpxkqZqPBq72mQlJB",
+          "model": "inkling-mini",
+          "system_fingerprint": "b1-e6d624b",
+          "object": "chat.completion.chunk",
+          "usage": {
+            "completion_tokens": 36,
+            "prompt_tokens": 66042,
+            "total_tokens": 66078,
+            "prompt_tokens_details": {
+              "cached_tokens": 65985
+            }
+          },
+          "timings": {
+            "cache_n": 65985,
+            "prompt_n": 57,
+            "prompt_ms": 185.367,
+            "prompt_per_token_ms": 3.2520526315789473,
+            "prompt_per_second": 307.4980983670233,
+            "predicted_n": 36,
+            "predicted_ms": 208.816,
+            "predicted_per_token_ms": 5.966171428571428,
+            "predicted_per_second": 167.6116772661099,
+            "draft_n": 35,
+            "draft_n_accepted": 30
+          }
+        }
+      ],
+      "turn": 3,
+      "cache_prompt_requested": true,
+      "prompt_tokens": 66042,
+      "cached_prompt_tokens": 65985,
+      "new_prompt_tokens": 57,
+      "tool_result": {
+        "name": "cobalt",
+        "code": "code_02",
+        "value": 85,
+        "next_name": "dune",
+        "payload": "Release record cobalt verified."
+      }
+    },
+    {
+      "wall_s": 0.47920773399891914,
+      "ttft_s": 0.39874586400037515,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "s2HVIaLRU5c1Ewl2DH7ip8TJFq5YFXcX",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\":\"dune\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "completion_tokens": 36,
+        "prompt_tokens": 66134,
+        "total_tokens": 66170,
+        "prompt_tokens_details": {
+          "cached_tokens": 66077
+        }
+      },
+      "server_timings": [
+        {
+          "cache_n": 66077,
+          "prompt_n": 57,
+          "prompt_ms": 188.389,
+          "prompt_per_token_ms": 3.3050701754385967,
+          "prompt_per_second": 302.5654364108308,
+          "predicted_n": 36,
+          "predicted_ms": 207.106,
+          "predicted_per_token_ms": 5.917314285714285,
+          "predicted_per_second": 168.99558680096183,
+          "draft_n": 35,
+          "draft_n_accepted": 30
+        }
+      ],
+      "sglext": [],
+      "timing_spec_frames": [
+        {
+          "choices": [],
+          "created": 1795302321,
+          "id": "chatcmpl-XHtb3boh7g55tLJp6rLRwFc06w48xgcU",
+          "model": "inkling-mini",
+          "system_fingerprint": "b1-e6d624b",
+          "object": "chat.completion.chunk",
+          "usage": {
+            "completion_tokens": 36,
+            "prompt_tokens": 66134,
+            "total_tokens": 66170,
+            "prompt_tokens_details": {
+              "cached_tokens": 66077
+            }
+          },
+          "timings": {
+            "cache_n": 66077,
+            "prompt_n": 57,
+            "prompt_ms": 188.389,
+            "prompt_per_token_ms": 3.3050701754385967,
+            "prompt_per_second": 302.5654364108308,
+            "predicted_n": 36,
+            "predicted_ms": 207.106,
+            "predicted_per_token_ms": 5.917314285714285,
+            "predicted_per_second": 168.99558680096183,
+            "draft_n": 35,
+            "draft_n_accepted": 30
+          }
+        }
+      ],
+      "turn": 4,
+      "cache_prompt_requested": true,
+      "prompt_tokens": 66134,
+      "cached_prompt_tokens": 66077,
+      "new_prompt_tokens": 57,
+      "tool_result": {
+        "name": "dune",
+        "code": "code_03",
+        "value": 21,
+        "next_name": "ember",
+        "payload": "Release record dune verified."
+      }
+    },
+    {
+      "wall_s": 0.48463555699891003,
+      "ttft_s": 0.4034864479999669,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "VmrHHkrVLbaSbxJ3JxDcSnJiTtWYUOfC",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\":\"ember\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "completion_tokens": 36,
+        "prompt_tokens": 66226,
+        "total_tokens": 66262,
+        "prompt_tokens_details": {
+          "cached_tokens": 66169
+        }
+      },
+      "server_timings": [
+        {
+          "cache_n": 66169,
+          "prompt_n": 57,
+          "prompt_ms": 188.823,
+          "prompt_per_token_ms": 3.312684210526316,
+          "prompt_per_second": 301.8700052430054,
+          "predicted_n": 36,
+          "predicted_ms": 210.146,
+          "predicted_per_token_ms": 6.0041714285714285,
+          "predicted_per_second": 166.5508741541595,
+          "draft_n": 35,
+          "draft_n_accepted": 30
+        }
+      ],
+      "sglext": [],
+      "timing_spec_frames": [
+        {
+          "choices": [],
+          "created": 1795302322,
+          "id": "chatcmpl-7V6myMcZjzf6GnzPwcpdHQybhxcP3faG",
+          "model": "inkling-mini",
+          "system_fingerprint": "b1-e6d624b",
+          "object": "chat.completion.chunk",
+          "usage": {
+            "completion_tokens": 36,
+            "prompt_tokens": 66226,
+            "total_tokens": 66262,
+            "prompt_tokens_details": {
+              "cached_tokens": 66169
+            }
+          },
+          "timings": {
+            "cache_n": 66169,
+            "prompt_n": 57,
+            "prompt_ms": 188.823,
+            "prompt_per_token_ms": 3.312684210526316,
+            "prompt_per_second": 301.8700052430054,
+            "predicted_n": 36,
+            "predicted_ms": 210.146,
+            "predicted_per_token_ms": 6.0041714285714285,
+            "predicted_per_second": 166.5508741541595,
+            "draft_n": 35,
+            "draft_n_accepted": 30
+          }
+        }
+      ],
+      "turn": 5,
+      "cache_prompt_requested": true,
+      "prompt_tokens": 66226,
+      "cached_prompt_tokens": 66169,
+      "new_prompt_tokens": 57,
+      "tool_result": {
+        "name": "ember",
+        "code": "code_04",
+        "value": 58,
+        "next_name": "fjord",
+        "payload": "Release record ember verified."
+      }
+    },
+    {
+      "wall_s": 0.4811737420004647,
+      "ttft_s": 0.4011945120000746,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "bas4RU3z9zPoyn0RL4ASKATVta7p5h6Q",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\":\"fjord\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "completion_tokens": 36,
+        "prompt_tokens": 66317,
+        "total_tokens": 66353,
+        "prompt_tokens_details": {
+          "cached_tokens": 66261
+        }
+      },
+      "server_timings": [
+        {
+          "cache_n": 66261,
+          "prompt_n": 56,
+          "prompt_ms": 186.156,
+          "prompt_per_token_ms": 3.324214285714286,
+          "prompt_per_second": 300.82296568469457,
+          "predicted_n": 36,
+          "predicted_ms": 208.935,
+          "predicted_per_token_ms": 5.969571428571428,
+          "predicted_per_second": 167.51621317634672,
+          "draft_n": 35,
+          "draft_n_accepted": 30
+        }
+      ],
+      "sglext": [],
+      "timing_spec_frames": [
+        {
+          "choices": [],
+          "created": 1795302322,
+          "id": "chatcmpl-cjTgAk2RwkSJV9Y1oVOTGyuYMGmWfdyP",
+          "model": "inkling-mini",
+          "system_fingerprint": "b1-e6d624b",
+          "object": "chat.completion.chunk",
+          "usage": {
+            "completion_tokens": 36,
+            "prompt_tokens": 66317,
+            "total_tokens": 66353,
+            "prompt_tokens_details": {
+              "cached_tokens": 66261
+            }
+          },
+          "timings": {
+            "cache_n": 66261,
+            "prompt_n": 56,
+            "prompt_ms": 186.156,
+            "prompt_per_token_ms": 3.324214285714286,
+            "prompt_per_second": 300.82296568469457,
+            "predicted_n": 36,
+            "predicted_ms": 208.935,
+            "predicted_per_token_ms": 5.969571428571428,
+            "predicted_per_second": 167.51621317634672,
+            "draft_n": 35,
+            "draft_n_accepted": 30
+          }
+        }
+      ],
+      "turn": 6,
+      "cache_prompt_requested": true,
+      "prompt_tokens": 66317,
+      "cached_prompt_tokens": 66261,
+      "new_prompt_tokens": 56,
+      "tool_result": {
+        "name": "fjord",
+        "code": "code_05",
+        "value": 95,
+        "next_name": "grove",
+        "payload": "Release record fjord verified."
+      }
+    },
+    {
+      "wall_s": 0.48359724799956894,
+      "ttft_s": 0.402781369000877,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "lY18MmUPv8E4cVKIDezNjvKh17kslPgW",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\":\"grove\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "completion_tokens": 36,
+        "prompt_tokens": 66409,
+        "total_tokens": 66445,
+        "prompt_tokens_details": {
+          "cached_tokens": 66352
+        }
+      },
+      "server_timings": [
+        {
+          "cache_n": 66352,
+          "prompt_n": 57,
+          "prompt_ms": 187.622,
+          "prompt_per_token_ms": 3.2916140350877194,
+          "prompt_per_second": 303.8023259532464,
+          "predicted_n": 36,
+          "predicted_ms": 209.596,
+          "predicted_per_token_ms": 5.988457142857143,
+          "predicted_per_second": 166.98791961678657,
+          "draft_n": 35,
+          "draft_n_accepted": 30
+        }
+      ],
+      "sglext": [],
+      "timing_spec_frames": [
+        {
+          "choices": [],
+          "created": 1795302323,
+          "id": "chatcmpl-jYO0iO7IPwJtddlSbWr5t2jUQFNPNHLb",
+          "model": "inkling-mini",
+          "system_fingerprint": "b1-e6d624b",
+          "object": "chat.completion.chunk",
+          "usage": {
+            "completion_tokens": 36,
+            "prompt_tokens": 66409,
+            "total_tokens": 66445,
+            "prompt_tokens_details": {
+              "cached_tokens": 66352
+            }
+          },
+          "timings": {
+            "cache_n": 66352,
+            "prompt_n": 57,
+            "prompt_ms": 187.622,
+            "prompt_per_token_ms": 3.2916140350877194,
+            "prompt_per_second": 303.8023259532464,
+            "predicted_n": 36,
+            "predicted_ms": 209.596,
+            "predicted_per_token_ms": 5.988457142857143,
+            "predicted_per_second": 166.98791961678657,
+            "draft_n": 35,
+            "draft_n_accepted": 30
+          }
+        }
+      ],
+      "turn": 7,
+      "cache_prompt_requested": true,
+      "prompt_tokens": 66409,
+      "cached_prompt_tokens": 66352,
+      "new_prompt_tokens": 57,
+      "tool_result": {
+        "name": "grove",
+        "code": "code_06",
+        "value": 31,
+        "next_name": "harbor",
+        "payload": "Release record grove verified."
+      }
+    },
+    {
+      "wall_s": 0.48687948399856396,
+      "ttft_s": 0.4051037859990174,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "rVY5GWi8oVrB3pEB6oWhzrXzEiXFumDa",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\":\"harbor\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "completion_tokens": 36,
+        "prompt_tokens": 66501,
+        "total_tokens": 66537,
+        "prompt_tokens_details": {
+          "cached_tokens": 66444
+        }
+      },
+      "server_timings": [
+        {
+          "cache_n": 66444,
+          "prompt_n": 57,
+          "prompt_ms": 187.999,
+          "prompt_per_token_ms": 3.2982280701754387,
+          "prompt_per_second": 303.1931020909686,
+          "predicted_n": 36,
+          "predicted_ms": 209.982,
+          "predicted_per_token_ms": 5.999485714285714,
+          "predicted_per_second": 166.68095360554716,
+          "draft_n": 35,
+          "draft_n_accepted": 30
+        }
+      ],
+      "sglext": [],
+      "timing_spec_frames": [
+        {
+          "choices": [],
+          "created": 1795302323,
+          "id": "chatcmpl-jLPDW1QAW58J24D83atfyJbXL4zPhi3B",
+          "model": "inkling-mini",
+          "system_fingerprint": "b1-e6d624b",
+          "object": "chat.completion.chunk",
+          "usage": {
+            "completion_tokens": 36,
+            "prompt_tokens": 66501,
+            "total_tokens": 66537,
+            "prompt_tokens_details": {
+              "cached_tokens": 66444
+            }
+          },
+          "timings": {
+            "cache_n": 66444,
+            "prompt_n": 57,
+            "prompt_ms": 187.999,
+            "prompt_per_token_ms": 3.2982280701754387,
+            "prompt_per_second": 303.1931020909686,
+            "predicted_n": 36,
+            "predicted_ms": 209.982,
+            "predicted_per_token_ms": 5.999485714285714,
+            "predicted_per_second": 166.68095360554716,
+            "draft_n": 35,
+            "draft_n_accepted": 30
+          }
+        }
+      ],
+      "turn": 8,
+      "cache_prompt_requested": true,
+      "prompt_tokens": 66501,
+      "cached_prompt_tokens": 66444,
+      "new_prompt_tokens": 57,
+      "tool_result": {
+        "name": "harbor",
+        "code": "code_07",
+        "value": 68,
+        "next_name": "indigo",
+        "payload": "Release record harbor verified."
+      }
+    },
+    {
+      "wall_s": 0.5057824790001177,
+      "ttft_s": 0.42023048599912727,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "cPzjqLZOw54EK234SIC3NaVT95Q3su35",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\":\"indigo\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "completion_tokens": 36,
+        "prompt_tokens": 66593,
+        "total_tokens": 66629,
+        "prompt_tokens_details": {
+          "cached_tokens": 66536
+        }
+      },
+      "server_timings": [
+        {
+          "cache_n": 66536,
+          "prompt_n": 57,
+          "prompt_ms": 192.268,
+          "prompt_per_token_ms": 3.373122807017544,
+          "prompt_per_second": 296.4611895895313,
+          "predicted_n": 36,
+          "predicted_ms": 219.937,
+          "predicted_per_token_ms": 6.283914285714286,
+          "predicted_per_second": 159.1364799919977,
+          "draft_n": 35,
+          "draft_n_accepted": 30
+        }
+      ],
+      "sglext": [],
+      "timing_spec_frames": [
+        {
+          "choices": [],
+          "created": 1795302324,
+          "id": "chatcmpl-V40BLSDqF5MdZ85GNw1Y5jzDZVOojpAr",
+          "model": "inkling-mini",
+          "system_fingerprint": "b1-e6d624b",
+          "object": "chat.completion.chunk",
+          "usage": {
+            "completion_tokens": 36,
+            "prompt_tokens": 66593,
+            "total_tokens": 66629,
+            "prompt_tokens_details": {
+              "cached_tokens": 66536
+            }
+          },
+          "timings": {
+            "cache_n": 66536,
+            "prompt_n": 57,
+            "prompt_ms": 192.268,
+            "prompt_per_token_ms": 3.373122807017544,
+            "prompt_per_second": 296.4611895895313,
+            "predicted_n": 36,
+            "predicted_ms": 219.937,
+            "predicted_per_token_ms": 6.283914285714286,
+            "predicted_per_second": 159.1364799919977,
+            "draft_n": 35,
+            "draft_n_accepted": 30
+          }
+        }
+      ],
+      "turn": 9,
+      "cache_prompt_requested": true,
+      "prompt_tokens": 66593,
+      "cached_prompt_tokens": 66536,
+      "new_prompt_tokens": 57,
+      "tool_result": {
+        "name": "indigo",
+        "code": "code_08",
+        "value": 4,
+        "next_name": "juniper",
+        "payload": "Release record indigo verified."
+      }
+    },
+    {
+      "wall_s": 0.4952332930006378,
+      "ttft_s": 0.41408880400013004,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "vQi9dTC4zm20MF5kpF7Px8uTmmjecluY",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\":\"juniper\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "completion_tokens": 36,
+        "prompt_tokens": 66685,
+        "total_tokens": 66721,
+        "prompt_tokens_details": {
+          "cached_tokens": 66628
+        }
+      },
+      "server_timings": [
+        {
+          "cache_n": 66628,
+          "prompt_n": 57,
+          "prompt_ms": 193.528,
+          "prompt_per_token_ms": 3.3952280701754383,
+          "prompt_per_second": 294.5310239345211,
+          "predicted_n": 36,
+          "predicted_ms": 211.496,
+          "predicted_per_token_ms": 6.042742857142858,
+          "predicted_per_second": 165.48776336195485,
+          "draft_n": 35,
+          "draft_n_accepted": 30
+        }
+      ],
+      "sglext": [],
+      "timing_spec_frames": [
+        {
+          "choices": [],
+          "created": 1795302324,
+          "id": "chatcmpl-q8HWIg5lhY3G5frIspsxGna0ck8HL74i",
+          "model": "inkling-mini",
+          "system_fingerprint": "b1-e6d624b",
+          "object": "chat.completion.chunk",
+          "usage": {
+            "completion_tokens": 36,
+            "prompt_tokens": 66685,
+            "total_tokens": 66721,
+            "prompt_tokens_details": {
+              "cached_tokens": 66628
+            }
+          },
+          "timings": {
+            "cache_n": 66628,
+            "prompt_n": 57,
+            "prompt_ms": 193.528,
+            "prompt_per_token_ms": 3.3952280701754383,
+            "prompt_per_second": 294.5310239345211,
+            "predicted_n": 36,
+            "predicted_ms": 211.496,
+            "predicted_per_token_ms": 6.042742857142858,
+            "predicted_per_second": 165.48776336195485,
+            "draft_n": 35,
+            "draft_n_accepted": 30
+          }
+        }
+      ],
+      "turn": 10,
+      "cache_prompt_requested": true,
+      "prompt_tokens": 66685,
+      "cached_prompt_tokens": 66628,
+      "new_prompt_tokens": 57,
+      "tool_result": {
+        "name": "juniper",
+        "code": "code_09",
+        "value": 41,
+        "next_name": "kestrel",
+        "payload": "Release record juniper verified."
+      }
+    },
+    {
+      "wall_s": 0.49914967800032173,
+      "ttft_s": 0.4104674789996352,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "0hhjNU27mjtDtUARdmcTRoODCfDz6YPd",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\":\"kestrel\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "completion_tokens": 37,
+        "prompt_tokens": 66778,
+        "total_tokens": 66815,
+        "prompt_tokens_details": {
+          "cached_tokens": 66720
+        }
+      },
+      "server_timings": [
+        {
+          "cache_n": 66720,
+          "prompt_n": 58,
+          "prompt_ms": 188.344,
+          "prompt_per_token_ms": 3.247310344827586,
+          "prompt_per_second": 307.9471605148027,
+          "predicted_n": 37,
+          "predicted_ms": 216.013,
+          "predicted_per_token_ms": 6.000361111111111,
+          "predicted_per_second": 166.6566364061422,
+          "draft_n": 35,
+          "draft_n_accepted": 31
+        }
+      ],
+      "sglext": [],
+      "timing_spec_frames": [
+        {
+          "choices": [],
+          "created": 1795302324,
+          "id": "chatcmpl-YgQFUPUdLog9AbykOThkybzqjMgSrvw3",
+          "model": "inkling-mini",
+          "system_fingerprint": "b1-e6d624b",
+          "object": "chat.completion.chunk",
+          "usage": {
+            "completion_tokens": 37,
+            "prompt_tokens": 66778,
+            "total_tokens": 66815,
+            "prompt_tokens_details": {
+              "cached_tokens": 66720
+            }
+          },
+          "timings": {
+            "cache_n": 66720,
+            "prompt_n": 58,
+            "prompt_ms": 188.344,
+            "prompt_per_token_ms": 3.247310344827586,
+            "prompt_per_second": 307.9471605148027,
+            "predicted_n": 37,
+            "predicted_ms": 216.013,
+            "predicted_per_token_ms": 6.000361111111111,
+            "predicted_per_second": 166.6566364061422,
+            "draft_n": 35,
+            "draft_n_accepted": 31
+          }
+        }
+      ],
+      "turn": 11,
+      "cache_prompt_requested": true,
+      "prompt_tokens": 66778,
+      "cached_prompt_tokens": 66720,
+      "new_prompt_tokens": 58,
+      "tool_result": {
+        "name": "kestrel",
+        "code": "code_10",
+        "value": 78,
+        "next_name": "lantern",
+        "payload": "Release record kestrel verified."
+      }
+    },
+    {
+      "wall_s": 0.49465859399970213,
+      "ttft_s": 0.4142609239988815,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "mfpfUB8xMp8C5lrZuLfOOhe6ouh5d7zE",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\":\"lantern\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "completion_tokens": 36,
+        "prompt_tokens": 66873,
+        "total_tokens": 66909,
+        "prompt_tokens_details": {
+          "cached_tokens": 66814
+        }
+      },
+      "server_timings": [
+        {
+          "cache_n": 66814,
+          "prompt_n": 59,
+          "prompt_ms": 189.507,
+          "prompt_per_token_ms": 3.211983050847458,
+          "prompt_per_second": 311.3341459682228,
+          "predicted_n": 36,
+          "predicted_ms": 209.75,
+          "predicted_per_token_ms": 5.992857142857143,
+          "predicted_per_second": 166.86531585220501,
+          "draft_n": 35,
+          "draft_n_accepted": 30
+        }
+      ],
+      "sglext": [],
+      "timing_spec_frames": [
+        {
+          "choices": [],
+          "created": 1795302325,
+          "id": "chatcmpl-6gctO0ZMNcNarswMw69XqOgWTXxBZUWY",
+          "model": "inkling-mini",
+          "system_fingerprint": "b1-e6d624b",
+          "object": "chat.completion.chunk",
+          "usage": {
+            "completion_tokens": 36,
+            "prompt_tokens": 66873,
+            "total_tokens": 66909,
+            "prompt_tokens_details": {
+              "cached_tokens": 66814
+            }
+          },
+          "timings": {
+            "cache_n": 66814,
+            "prompt_n": 59,
+            "prompt_ms": 189.507,
+            "prompt_per_token_ms": 3.211983050847458,
+            "prompt_per_second": 311.3341459682228,
+            "predicted_n": 36,
+            "predicted_ms": 209.75,
+            "predicted_per_token_ms": 5.992857142857143,
+            "predicted_per_second": 166.86531585220501,
+            "draft_n": 35,
+            "draft_n_accepted": 30
+          }
+        }
+      ],
+      "turn": 12,
+      "cache_prompt_requested": true,
+      "prompt_tokens": 66873,
+      "cached_prompt_tokens": 66814,
+      "new_prompt_tokens": 59,
+      "tool_result": {
+        "name": "lantern",
+        "code": "code_11",
+        "value": 14,
+        "next_name": "meadow",
+        "payload": "Release record lantern verified."
+      }
+    },
+    {
+      "wall_s": 0.49383006499920157,
+      "ttft_s": 0.4125302160009596,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "oRLv8EXkxEodfWNJYISIlLRX4RhPZKaz",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\":\"meadow\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "completion_tokens": 36,
+        "prompt_tokens": 66965,
+        "total_tokens": 67001,
+        "prompt_tokens_details": {
+          "cached_tokens": 66908
+        }
+      },
+      "server_timings": [
+        {
+          "cache_n": 66908,
+          "prompt_n": 57,
+          "prompt_ms": 188.852,
+          "prompt_per_token_ms": 3.3131929824561404,
+          "prompt_per_second": 301.8236502658166,
+          "predicted_n": 36,
+          "predicted_ms": 209.493,
+          "predicted_per_token_ms": 5.985514285714285,
+          "predicted_per_second": 167.07002143269705,
+          "draft_n": 35,
+          "draft_n_accepted": 30
+        }
+      ],
+      "sglext": [],
+      "timing_spec_frames": [
+        {
+          "choices": [],
+          "created": 1795302325,
+          "id": "chatcmpl-EGYhNyC0ioZsBr1lIEyAM2DAsqDQ0K7Z",
+          "model": "inkling-mini",
+          "system_fingerprint": "b1-e6d624b",
+          "object": "chat.completion.chunk",
+          "usage": {
+            "completion_tokens": 36,
+            "prompt_tokens": 66965,
+            "total_tokens": 67001,
+            "prompt_tokens_details": {
+              "cached_tokens": 66908
+            }
+          },
+          "timings": {
+            "cache_n": 66908,
+            "prompt_n": 57,
+            "prompt_ms": 188.852,
+            "prompt_per_token_ms": 3.3131929824561404,
+            "prompt_per_second": 301.8236502658166,
+            "predicted_n": 36,
+            "predicted_ms": 209.493,
+            "predicted_per_token_ms": 5.985514285714285,
+            "predicted_per_second": 167.07002143269705,
+            "draft_n": 35,
+            "draft_n_accepted": 30
+          }
+        }
+      ],
+      "turn": 13,
+      "cache_prompt_requested": true,
+      "prompt_tokens": 66965,
+      "cached_prompt_tokens": 66908,
+      "new_prompt_tokens": 57,
+      "tool_result": {
+        "name": "meadow",
+        "code": "code_12",
+        "value": 51,
+        "next_name": "north",
+        "payload": "Release record meadow verified."
+      }
+    },
+    {
+      "wall_s": 0.504343680000602,
+      "ttft_s": 0.4230897119996371,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "sydMVzjvEQCykVup1pLqexyIlo3kzKqC",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\":\"north\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "completion_tokens": 36,
+        "prompt_tokens": 67057,
+        "total_tokens": 67093,
+        "prompt_tokens_details": {
+          "cached_tokens": 67000
+        }
+      },
+      "server_timings": [
+        {
+          "cache_n": 67000,
+          "prompt_n": 57,
+          "prompt_ms": 187.837,
+          "prompt_per_token_ms": 3.2953859649122803,
+          "prompt_per_second": 303.45459094853516,
+          "predicted_n": 36,
+          "predicted_ms": 216.183,
+          "predicted_per_token_ms": 6.176657142857143,
+          "predicted_per_second": 161.89987186781568,
+          "draft_n": 35,
+          "draft_n_accepted": 30
+        }
+      ],
+      "sglext": [],
+      "timing_spec_frames": [
+        {
+          "choices": [],
+          "created": 1795302326,
+          "id": "chatcmpl-OVbK0k7t7Gm5678wQ01In4nY7WVojcKS",
+          "model": "inkling-mini",
+          "system_fingerprint": "b1-e6d624b",
+          "object": "chat.completion.chunk",
+          "usage": {
+            "completion_tokens": 36,
+            "prompt_tokens": 67057,
+            "total_tokens": 67093,
+            "prompt_tokens_details": {
+              "cached_tokens": 67000
+            }
+          },
+          "timings": {
+            "cache_n": 67000,
+            "prompt_n": 57,
+            "prompt_ms": 187.837,
+            "prompt_per_token_ms": 3.2953859649122803,
+            "prompt_per_second": 303.45459094853516,
+            "predicted_n": 36,
+            "predicted_ms": 216.183,
+            "predicted_per_token_ms": 6.176657142857143,
+            "predicted_per_second": 161.89987186781568,
+            "draft_n": 35,
+            "draft_n_accepted": 30
+          }
+        }
+      ],
+      "turn": 14,
+      "cache_prompt_requested": true,
+      "prompt_tokens": 67057,
+      "cached_prompt_tokens": 67000,
+      "new_prompt_tokens": 57,
+      "tool_result": {
+        "name": "north",
+        "code": "code_13",
+        "value": 88,
+        "next_name": "onyx",
+        "payload": "Release record north verified."
+      }
+    },
+    {
+      "wall_s": 0.5157027050008764,
+      "ttft_s": 0.43460426599995117,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "I5bJcHs973U8z8KphsGj5t4oCGlVnY2o",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\":\"onyx\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "completion_tokens": 37,
+        "prompt_tokens": 67149,
+        "total_tokens": 67186,
+        "prompt_tokens_details": {
+          "cached_tokens": 67092
+        }
+      },
+      "server_timings": [
+        {
+          "cache_n": 67092,
+          "prompt_n": 57,
+          "prompt_ms": 197.412,
+          "prompt_per_token_ms": 3.463368421052632,
+          "prompt_per_second": 288.7362470366543,
+          "predicted_n": 37,
+          "predicted_ms": 213.617,
+          "predicted_per_token_ms": 5.933805555555555,
+          "predicted_per_second": 168.52591319979214,
+          "draft_n": 35,
+          "draft_n_accepted": 31
+        }
+      ],
+      "sglext": [],
+      "timing_spec_frames": [
+        {
+          "choices": [],
+          "created": 1795302327,
+          "id": "chatcmpl-4yFMWmmunxiGeOS8zRBBtgouFHBP4tez",
+          "model": "inkling-mini",
+          "system_fingerprint": "b1-e6d624b",
+          "object": "chat.completion.chunk",
+          "usage": {
+            "completion_tokens": 37,
+            "prompt_tokens": 67149,
+            "total_tokens": 67186,
+            "prompt_tokens_details": {
+              "cached_tokens": 67092
+            }
+          },
+          "timings": {
+            "cache_n": 67092,
+            "prompt_n": 57,
+            "prompt_ms": 197.412,
+            "prompt_per_token_ms": 3.463368421052632,
+            "prompt_per_second": 288.7362470366543,
+            "predicted_n": 37,
+            "predicted_ms": 213.617,
+            "predicted_per_token_ms": 5.933805555555555,
+            "predicted_per_second": 168.52591319979214,
+            "draft_n": 35,
+            "draft_n_accepted": 31
+          }
+        }
+      ],
+      "turn": 15,
+      "cache_prompt_requested": true,
+      "prompt_tokens": 67149,
+      "cached_prompt_tokens": 67092,
+      "new_prompt_tokens": 57,
+      "tool_result": {
+        "name": "onyx",
+        "code": "code_14",
+        "value": 24,
+        "next_name": "pine",
+        "payload": "Release record onyx verified."
+      }
+    },
+    {
+      "wall_s": 0.5347556790002272,
+      "ttft_s": 0.4432324940007675,
+      "first_content_s": null,
+      "answer": "",
+      "reasoning": "",
+      "tool_calls": [
+        {
+          "id": "ZImaNgILOd34XYwmGdT8Ysf6eBULttIe",
+          "type": "function",
+          "function": {
+            "name": "read_release_record",
+            "arguments": "{\"name\":\"pine\"}"
+          }
+        }
+      ],
+      "finish_reason": "tool_calls",
+      "usage": {
+        "completion_tokens": 36,
+        "prompt_tokens": 67243,
+        "total_tokens": 67279,
+        "prompt_tokens_details": {
+          "cached_tokens": 67185
+        }
+      },
+      "server_timings": [
+        {
+          "cache_n": 67185,
+          "prompt_n": 58,
+          "prompt_ms": 199.227,
+          "prompt_per_token_ms": 3.434948275862069,
+          "prompt_per_second": 291.12519889372425,
+          "predicted_n": 36,
+          "predicted_ms": 235.863,
+          "predicted_per_token_ms": 6.738942857142857,
+          "predicted_per_second": 148.3912271106532,
+          "draft_n": 35,
+          "draft_n_accepted": 30
+        }
+      ],
+      "sglext": [],
+      "timing_spec_frames": [
+        {
+          "choices": [],
+          "created": 1795302327,
+          "id": "chatcmpl-TnceTMKk36b67HQkKLQFISWp3XUAhA1O",
+          "model": "inkling-mini",
+          "system_fingerprint": "b1-e6d624b",
+          "object": "chat.completion.chunk",
+          "usage": {
+            "completion_tokens": 36,
+            "prompt_tokens": 67243,
+            "total_tokens": 67279,
+            "prompt_tokens_details": {
+              "cached_tokens": 67185
+            }
+          },
+          "timings": {
+            "cache_n": 67185,
+            "prompt_n": 58,
+            "prompt_ms": 199.227,
+            "prompt_per_token_ms": 3.434948275862069,
+            "prompt_per_second": 291.12519889372425,
+            "predicted_n": 36,
+            "predicted_ms": 235.863,
+            "predicted_per_token_ms": 6.738942857142857,
+            "predicted_per_second": 148.3912271106532,
+            "draft_n": 35,
+            "draft_n_accepted": 30
+          }
+        }
+      ],
+      "turn": 16,
+      "cache_prompt_requested": true,
+      "prompt_tokens": 67243,
+      "cached_prompt_tokens": 67185,
+      "new_prompt_tokens": 58,
+      "tool_result": {
+        "name": "pine",
+        "code": "code_15",
+        "value": 61,
+        "next_name": null,
+        "payload": "Release record pine verified."
+      }
+    },
+    {
+      "wall_s": 1.3457564700001967,
+      "ttft_s": 0.36799117699956696,
+      "first_content_s": 1.1857070890000614,
+      "answer": "{\"name\":\"fjord\",\"code\":\"code_05\",\"value\":95}",
+      "reasoning": "Sixteen records read. Values:\nalder 11, birch 48, cobalt 85, dune 21, ember 58, fjord 95, grove 31, harbor 68, indigo 4, juniper 41, kestrel 78, lantern 14, meadow 51, north 88, onyx 24, pine 61.\n\nLargest: fjord 95. Return JSON with name, code, value.",
+      "tool_calls": [],
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 136,
+        "prompt_tokens": 67332,
+        "total_tokens": 67468,
+        "prompt_tokens_details": {
+          "cached_tokens": 67278
+        }
+      },
+      "server_timings": [
+        {
+          "cache_n": 67278,
+          "prompt_n": 54,
+          "prompt_ms": 209.577,
+          "prompt_per_token_ms": 3.8810555555555557,
+          "prompt_per_second": 257.6618617500966,
+          "predicted_n": 136,
+          "predicted_ms": 1028.568,
+          "predicted_per_token_ms": 7.619022222222222,
+          "predicted_per_second": 131.25043750145832,
+          "draft_n": 175,
+          "draft_n_accepted": 110
+        }
+      ],
+      "sglext": [],
+      "timing_spec_frames": [
+        {
+          "choices": [],
+          "created": 1795302328,
+          "id": "chatcmpl-cUTbz6anG4amb97EDx2sPvYMtdVVKeR1",
+          "model": "inkling-mini",
+          "system_fingerprint": "b1-e6d624b",
+          "object": "chat.completion.chunk",
+          "usage": {
+            "completion_tokens": 136,
+            "prompt_tokens": 67332,
+            "total_tokens": 67468,
+            "prompt_tokens_details": {
+              "cached_tokens": 67278
+            }
+          },
+          "timings": {
+            "cache_n": 67278,
+            "prompt_n": 54,
+            "prompt_ms": 209.577,
+            "prompt_per_token_ms": 3.8810555555555557,
+            "prompt_per_second": 257.6618617500966,
+            "predicted_n": 136,
+            "predicted_ms": 1028.568,
+            "predicted_per_token_ms": 7.619022222222222,
+            "predicted_per_second": 131.25043750145832,
+            "draft_n": 175,
+            "draft_n_accepted": 110
+          }
+        }
+      ],
+      "turn": 17,
+      "cache_prompt_requested": true,
+      "prompt_tokens": 67332,
+      "cached_prompt_tokens": 67278,
+      "new_prompt_tokens": 54
+    }
+  ],
+  "status": "passed",
+  "error": null,
+  "chain_length": 16,
+  "session_wall_s": 34.2701864490009,
+  "first_request_wall_s": 25.381885876000524,
+  "followup_wall_s": 8.882218155000373,
+  "total_prompt_tokens": 1132013,
+  "total_completion_tokens": 804
+}

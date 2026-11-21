@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# Isolated comparator servers; help and --dry-run never acquire the GPU.
+set -euo pipefail
+root=$(cd "$(dirname "$0")/.." && pwd)
+usage() {
+  cat <<'EOF'
+Usage: scripts/serve-alternative {sglang|basalt} {off|on} [--port N] [--context N] [--parallel N] [--no-prefix-cache] [--no-prefill-graph|--minimal-startup] [--skip-warmup] [--memory-fraction F] [--prefill-chunk N] [--spec-profile] [--dry-run]
+  Default port 18080, context 8192, parallel 1; both bind host loopback only.
+  The API model alias is inkling-mini. SGLang uses native NVFP4/BF16 and FA4;
+  Basalt uses its distinct NVFP4/q8 pack. on = DSpark; off = plain decode.
+  --minimal-startup disables decode and prefill CUDA graphs and skips the native server warmup.
+  --dry-run prints the command without starting services or acquiring GPU.
+  --spec-profile enables DSpark CUDA-event segment capture (SGLang on only).
+  Metrics: curl http://127.0.0.1:PORT/metrics (SGLang Prometheus; Basalt JSON).
+  Basalt request logs also show accepted/offered draft statistics when drafting.
+EOF
+}
+if [[ ${1:-} == --help || ${1:-} == -h ]]; then usage; exit 0; fi
+[[ $# -ge 2 ]] || { usage >&2; exit 2; }
+engine=$1; spec=$2; shift 2
+[[ $engine == sglang || $engine == basalt ]] || { echo 'unknown engine' >&2; exit 2; }
+[[ $spec == on || $spec == off ]] || { echo 'spec must be on or off' >&2; exit 2; }
+no_prefill_graph=0; minimal_startup=0; skip_warmup=0; memory_fraction=''; prefill_chunk=''; port=18080; context=8192; parallel=1; dry=0; no_prefix=0; spec_profile=0
+cache=$(realpath -m "${HF_HUB_CACHE:-${HF_HOME:-$HOME/.cache/huggingface}/hub}")
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --port|--context|--parallel) [[ $# -ge 2 ]] || { echo "missing value for $1" >&2; exit 2; }; key=${1#--}; printf -v "$key" '%s' "$2"; shift 2;;
+    --skip-warmup) [[ $engine == sglang ]] || { echo 'Warmup flag requires SGLang.' >&2; exit 2; }; skip_warmup=1; shift;;
+    --minimal-startup) [[ $engine == sglang ]] || { echo 'Startup flags require SGLang.' >&2; exit 2; }; no_prefill_graph=1; minimal_startup=1; skip_warmup=1; shift;;
+    --no-prefill-graph) [[ $engine == sglang ]] || { echo 'Prefill graph flag requires SGLang.' >&2; exit 2; }; no_prefill_graph=1; shift;;
+    --memory-fraction) [[ $# -ge 2 && $engine == sglang && $2 =~ ^0\.[0-9]+$ ]] || { echo 'SGLang memory fraction must be between zero and one.' >&2; exit 2; }; memory_fraction=$2; shift 2;;
+    --prefill-chunk) [[ $# -ge 2 && $engine == sglang && $2 =~ ^[1-9][0-9]*$ ]] || { echo 'SGLang prefill chunk must be a positive integer.' >&2; exit 2; }; prefill_chunk=$2; shift 2;;
+    --dry-run) dry=1; shift;;
+    --no-prefix-cache) no_prefix=1; shift;;
+    --spec-profile) spec_profile=1; shift;;
+    *) echo "unknown option: $1" >&2; exit 2;;
+  esac
+done
+[[ $port =~ ^[0-9]+$ && $context =~ ^[0-9]+$ && $parallel =~ ^[0-9]+$ ]] || { echo 'numeric options required' >&2; exit 2; }
+((port >= 1024 && port <= 65535 && context >= 1024 && parallel >= 1 && parallel <= 4)) || { echo 'port must be 1024..65535, context >=1024, parallel 1..4' >&2; exit 2; }
+if ((spec_profile)) && [[ $engine != sglang || $spec != on ]]; then echo '--spec-profile requires sglang on' >&2; exit 2; fi
+work="$root/.work"
+if [[ $engine == sglang ]]; then
+  model="$cache/models--thinkingmachines--Inkling-2-Mini/snapshots/ed40e7da625f594fc9c4990f5f66be24873c22d7"
+  # Mount the entire hub because snapshots contain relative symlinks into blobs.
+  image='lmsysorg/sglang@sha256:421aed3ac11741381eac350bf7b1db28a0cafb6ae49b57ae78fba86a16a32306'
+  cmd=(docker run --rm --name "inkling-mini-alt-$port" --gpus 'device=0' --shm-size 16g -p "127.0.0.1:$port:$port" -v "$cache:$cache:ro" -v "$work/sglang-cache:/tmp/sglang-cache" -e HOME=/tmp/sglang-cache -e HF_HUB_OFFLINE=1 -e XDG_CACHE_HOME=/tmp/sglang-cache -e TRITON_CACHE_DIR=/tmp/sglang-cache/triton --entrypoint python3 "$image" -m sglang.launch_server --model-path "$model" --served-model-name inkling-mini --host 0.0.0.0 --port "$port" --tp 1 --ep 1 --attention-backend fa4 --dtype bfloat16 --page-size 128 --context-length "$context" --max-running-requests "$parallel" --grammar-backend xgrammar --enable-multimodal --reasoning-parser inkling --tool-call-parser inkling2 --enable-metrics)
+  if ((no_prefill_graph)); then cmd+=(--disable-prefill-cuda-graph); fi
+  if ((minimal_startup)); then cmd+=(--disable-decode-cuda-graph); fi
+  if ((skip_warmup)); then cmd+=(--skip-server-warmup); fi
+  if [[ -n $memory_fraction ]]; then cmd+=(--mem-fraction-static "$memory_fraction"); fi
+  if [[ -n $prefill_chunk ]]; then cmd+=(--chunked-prefill-size "$prefill_chunk"); fi
+  if ((spec_profile)); then
+    cmd=("${cmd[@]:0:2}" -e SGLANG_DSPARK_DEBUG_DUMP=core,step_gpu_time,draft_gpu_time,target_verify_gpu_time "${cmd[@]:2}")
+  fi
+  if ((no_prefix)); then cmd+=(--disable-radix-cache); fi
+  if [[ $spec == on ]]; then
+    # Insert the published DSpark environment before the container image.
+    cmd=(env SGLANG_OPT_INKLING2_VERIFY_REL_BIAS_KERNEL=1 SGLANG_OPT_DSV41_DSPARK_MID_FOLD=1
+         SGLANG_OPT_DSV41_DSPARK_PREPARE_INPUTS_ONCE=1 SGLANG_OPT_DSV41_DSPARK_SKIP_PREFILLED_INPUTS=1
+         "${cmd[@]:0:2}" -e SGLANG_OPT_INKLING2_VERIFY_REL_BIAS_KERNEL -e SGLANG_OPT_DSV41_DSPARK_MID_FOLD
+         -e SGLANG_OPT_DSV41_DSPARK_PREPARE_INPUTS_ONCE -e SGLANG_OPT_DSV41_DSPARK_SKIP_PREFILLED_INPUTS
+         "${cmd[@]:2}" --speculative-algorithm DSPARK --speculative-num-draft-tokens 8)
+  fi
+else
+  model="$cache/models--jesdga--Inkling-2-Mini-Basalt/snapshots/426fea7456c37c102be8a30d16e4f6bf0dcd892d/Inkling-2-Mini-NVFP4-q8.basalt"
+  cuda=${BASALT_CUDA_LIBDIR:-$work/basalt-cuda13}
+  # Basalt's config is passed entirely by CLI, avoiding host config files.
+  cmd=(env "LD_LIBRARY_PATH=$cuda${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" "XDG_CACHE_HOME=$work/basalt-cache" "$work/basalt-v0.5.5-linux-x64/bin/basalt" serve "$model" --python "$work/basalt-venv/bin/python" --host 127.0.0.1 --port "$port" --alias inkling-mini --gpu 0 --max-context "$context" --parallel "$parallel" --slot-full-context --vision dynamic --request-lines --spec "$([[ $spec == on ]] && echo 8 || echo 1)")
+  if ((no_prefix)); then cmd+=(--prompt-cache 0 --prompt-cache-root 0); fi
+fi
+if ((dry)); then printf '%q ' "$root/scripts/with-gpu" "${cmd[@]}"; printf '\n'; exit 0; fi
+[[ -e "$model" ]] || { echo "Pinned model missing: $model; run scripts/prepare-alternatives $engine" >&2; exit 1; }
+if [[ $engine == basalt ]]; then
+  for lib in libcudart.so.13 libcublas.so.13 libcublasLt.so.13; do
+    [[ -r $cuda/$lib ]] || { echo "Missing $cuda/$lib; run prepare-alternatives basalt or set BASALT_CUDA_LIBDIR" >&2; exit 1; }
+  done
+fi
+python3 - "$port" <<'PY'
+import socket, sys
+s = socket.socket()
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+try: s.bind(('127.0.0.1', int(sys.argv[1])))
+except OSError as e: raise SystemExit('Requested local port unavailable: ' + str(e))
+finally: s.close()
+PY
+if [[ $engine == sglang ]]; then mkdir -p "$work/sglang-cache"; else mkdir -p "$work/basalt-cache"; fi
+exec "$root/scripts/with-gpu" "${cmd[@]}"

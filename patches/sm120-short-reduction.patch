@@ -1,0 +1,85 @@
+diff --git a/ggml/src/ggml-cuda/mmvf.cu b/ggml/src/ggml-cuda/mmvf.cu
+index 154a621..7d402b0 100644
+--- a/ggml/src/ggml-cuda/mmvf.cu
++++ b/ggml/src/ggml-cuda/mmvf.cu
+@@ -5,6 +5,45 @@
+ #include "mmf.cuh"
+ #include "convert.cuh"
+ 
++#if !defined(GGML_USE_HIP) && !defined(GGML_USE_MUSA)
++// One two-lane group per output row.  Each lane corresponds to one float2
++// iteration of the stock 32-lane kernel; preserve its pair of MADs and its
++// XOR reduction order, including the four additions of inactive +0 lanes.
++template<int K, int Q>
++static __global__ void mul_mat_vec_f_tiny_k(
++        const float * x, const float * y, float * dst, int rows) {
++    ggml_cuda_pdl_sync();
++    const int row = blockIdx.x * (blockDim.x / 2) + threadIdx.x / 2;
++    const int pair = threadIdx.x % 2;
++    const int batch = blockIdx.y;
++    float sums[Q] = {};
++    if (row < rows && pair < K / 2) {
++        const float2 xv = reinterpret_cast<const float2 *>(x + (int64_t(batch) * rows + row) * K)[pair];
++        #pragma unroll
++        for (int j = 0; j < Q; ++j) {
++            const float2 yv = reinterpret_cast<const float2 *>(y + (int64_t(batch) * Q + j) * K)[pair];
++            ggml_cuda_mad(sums[j], xv.x, yv.x);
++            ggml_cuda_mad(sums[j], xv.y, yv.y);
++        }
++    }
++    ggml_cuda_pdl_lc();
++    #pragma unroll
++    for (int j = 0; j < Q; ++j) {
++        // The stock XOR offsets 16, 8 and 4 each combine with +0.
++        sums[j] = __fadd_rn(sums[j], 0.0f);
++        sums[j] = __fadd_rn(sums[j], 0.0f);
++        sums[j] = __fadd_rn(sums[j], 0.0f);
++        // The original writes column j from lane j, not always lane zero.
++        // For j=2, offset 2 adds the active lanes to +0; j=1
++        // performs the last XOR addition in the opposite operand order.
++        sums[j] = j == 2 ? __fadd_rn(0.0f, sums[j]) : __fadd_rn(sums[j], 0.0f);
++        const float other = __shfl_xor_sync(0xffffffff, sums[j], 1);
++        sums[j] = j == 1 ? __fadd_rn(other, sums[j]) : __fadd_rn(sums[j], other);
++        if (pair == 0 && row < rows) dst[(int64_t(batch) * Q + j) * rows + row] = sums[j];
++    }
++}
++#endif
++
+ static __device__ __forceinline__ float2 mmvf_load_fp8x2(const ggml_fp8_e4m3_t * x, const int col2) {
+ #if defined(FP8_AVAILABLE) && !defined(GGML_USE_HIP) && !defined(GGML_USE_MUSA) && defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 800
+     return ggml_cuda_cast<float2>(reinterpret_cast<const __nv_fp8x2_e4m3 *>(x)[col2]);
+@@ -775,6 +814,34 @@ void ggml_cuda_mul_mat_vec_f(ggml_backend_cuda_context & ctx, const ggml_tensor
+ 
+     const int64_t ids_stride = ids ? ids->nb[1] / ggml_type_size(ids->type) : 0;
+ 
++#if !defined(GGML_USE_HIP) && !defined(GGML_USE_MUSA)
++    // Narrow prefill case: independent, contiguous F32 matrices per token,
++    // without fused operations, expert indices or broadcasting.
++    if (cc == GGML_CUDA_CC_BLACKWELL && src0->type == GGML_TYPE_F32 && !ids && !fusion &&
++        (ne00 == 2 || ne00 == 4) && ne01 >= 128 && ne01 <= INT32_MAX &&
++        ne11 >= 1 && ne11 <= 3 && ne02 >= 128 && ne02 <= 65535 &&
++        ne02 == ne12 && ne02 == ne2 && ne03 == 1 && ne13 == 1 && ne3 == 1 &&
++        ggml_cuda_is_aligned(src0, alignof(float2)) && ggml_cuda_is_aligned(src1, alignof(float2)) &&
++        ggml_is_contiguous(src0) && ggml_is_contiguous(src1) && ggml_is_contiguous(dst)) {
++        constexpr int threads = 128;
++        const ggml_cuda_kernel_launch_params params(dim3((ne01 + threads/2 - 1)/(threads/2), ne02),
++                                                    dim3(threads), 0, ctx.stream());
++        const float * x = static_cast<const float *>(src0->data);
++        #define LAUNCH_TINY(K, Q) ggml_cuda_kernel_launch(mul_mat_vec_f_tiny_k<K, Q>, params, x, src1_d, dst_d, int(ne01))
++        if (ne00 == 2) {
++            if      (ne11 == 1) { LAUNCH_TINY(2, 1); }
++            else if (ne11 == 2) { LAUNCH_TINY(2, 2); }
++            else                { LAUNCH_TINY(2, 3); }
++        } else {
++            if      (ne11 == 1) { LAUNCH_TINY(4, 1); }
++            else if (ne11 == 2) { LAUNCH_TINY(4, 2); }
++            else                { LAUNCH_TINY(4, 3); }
++        }
++        #undef LAUNCH_TINY
++        return;
++    }
++#endif
++
+     switch (src0->type) {
+         case GGML_TYPE_F32: {
+             const float * src0_d = (const float *) src0->data;

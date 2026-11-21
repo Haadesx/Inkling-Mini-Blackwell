@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Measure the explicit-mask switch with identical binaries, weights and input size.
+set -euo pipefail
+root=$(cd "$(dirname "$0")/.." && pwd)
+out=${1:-"$root/results-mask-prefill-$(date -u +%Y%m%dT%H%M%SZ)-$$"}
+if [[ $# -gt 1 || $out == --help ]]; then
+    echo 'Usage: scripts/reproduce-mask-prefill [NEW_DIRECTORY]'
+    echo 'INKLING_DSPARK_BUILD selects the --fused-mask build. REPEATS defaults to 3.'
+    [[ $out == --help ]] && exit 0
+    exit 2
+fi
+export INKLING_BIN_DIR=${INKLING_DSPARK_BUILD:-"$root/.work/dspark-fused-repro/build"}
+[[ -x "$INKLING_BIN_DIR/inkling-rel-mask-smoke" ]] || { echo 'First build with scripts/build-dspark --fused-mask.' >&2; exit 1; }
+repeats=${REPEATS:-3}
+[[ $repeats =~ ^[1-9][0-9]*$ ]] || { echo 'REPEATS must be a positive integer.' >&2; exit 2; }
+mkdir "$out"
+sampler=''
+stop_sampler() {
+    if [[ -n "$sampler" ]]; then
+        kill "$sampler" 2>/dev/null || true
+        wait "$sampler" 2>/dev/null || true
+        sampler=''
+    fi
+}
+trap stop_sampler EXIT
+for ((rep=1; rep<=repeats; rep++)); do
+    modes=(0 1)
+    if ((rep % 2 == 0)); then modes=(1 0); fi
+    for fused in "${modes[@]}"; do
+        tag="pp32768-mask-$fused-$rep"
+        nvidia-smi -i 0 --query-gpu=timestamp,memory.used,power.draw,temperature.gpu,clocks.sm --format=csv -lms 200 >"$out/$tag-device.csv" &
+        sampler=$!
+        INKLING_EXPLICIT_REL_MASK="$fused" "$root/scripts/llama" patch bench \
+            -p 32768 -n 0 -r 1 --no-warmup >"$out/$tag.json" 2>"$out/$tag.log"
+        stop_sampler
+    done
+done
+python3 - "$out" <<'PY'
+import json
+import sys
+from pathlib import Path
+from statistics import median
+
+root = Path(sys.argv[1])
+for mode in (0, 1):
+    samples = [s for p in sorted(root.glob(f"pp32768-mask-{mode}-*.json"))
+               for s in json.loads(p.read_text())[0]["samples_ts"]]
+    print(f"fused={mode}   median {median(samples):,.1f} tokens/s   "
+          f"range {min(samples):,.1f}–{max(samples):,.1f}   runs {len(samples)}")
+PY

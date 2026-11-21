@@ -1,0 +1,174 @@
+{
+  "scope": "visible completed-code answers at 1024 and separately labeled 3072-token budgets",
+  "arms": {
+    "combined-w3-32k": {
+      "file": "evidence/gguf-dspark/combined-w3-32k/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    },
+    "combined-w3-64k": {
+      "file": "evidence/gguf-dspark/combined-w3-64k/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    },
+    "combined-w7-32k": {
+      "file": "evidence/gguf-dspark/combined-w7-32k/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    },
+    "combined-w7-64k": {
+      "file": "evidence/gguf-dspark/combined-w7-64k/completed-code.jsonl",
+      "status": "scored",
+      "passed": true,
+      "ok": true,
+      "finish_reason": "stop",
+      "max_tokens": 3072,
+      "answer_sha256": "a7212b34908300845431332cecd2abc3e5fc8ad7b3c35f41fc576c23c7a89f7f",
+      "tests": {
+        "partial_order_disabled": true,
+        "all_disabled": true,
+        "empty": true,
+        "large_limit": true,
+        "unit_limit": true,
+        "zero_limit": true,
+        "negative_limit": true
+      }
+    },
+    "fused-repro-32k": {
+      "file": "evidence/gguf-dspark/fused-repro-32k/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    },
+    "fused-repro-64k": {
+      "file": "evidence/gguf-dspark/fused-repro-64k/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    },
+    "fused-w7-32k": {
+      "file": "evidence/gguf-dspark/fused-w7-32k/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    },
+    "fused-w7-64k": {
+      "file": "evidence/gguf-dspark/fused-w7-64k/completed-code.jsonl",
+      "status": "scored",
+      "passed": true,
+      "ok": true,
+      "finish_reason": "stop",
+      "max_tokens": 3072,
+      "answer_sha256": "a7212b34908300845431332cecd2abc3e5fc8ad7b3c35f41fc576c23c7a89f7f",
+      "tests": {
+        "partial_order_disabled": true,
+        "all_disabled": true,
+        "empty": true,
+        "large_limit": true,
+        "unit_limit": true,
+        "zero_limit": true,
+        "negative_limit": true
+      }
+    },
+    "independent-prefill": {
+      "file": "evidence/gguf-dspark/independent-prefill/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    },
+    "native-32k": {
+      "file": "evidence/gguf-dspark/native-32k/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    },
+    "native-64k": {
+      "file": "evidence/gguf-dspark/native-64k/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    },
+    "native-decodegraph-nowarmup-32k": {
+      "file": "evidence/gguf-dspark/native-decodegraph-nowarmup-32k/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    },
+    "native-decodegraph-nowarmup-64k": {
+      "file": "evidence/gguf-dspark/native-decodegraph-nowarmup-64k/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    },
+    "native-faststart-32k": {
+      "file": "evidence/gguf-dspark/native-faststart-32k/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    },
+    "native-faststart-64k": {
+      "file": "evidence/gguf-dspark/native-faststart-64k/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    },
+    "native-faststart-repeat-32k": {
+      "file": "evidence/gguf-dspark/native-faststart-repeat-32k/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    },
+    "native-minstart-32k": {
+      "file": "evidence/gguf-dspark/native-minstart-32k/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    },
+    "native-minstart-64k": {
+      "file": "evidence/gguf-dspark/native-minstart-64k/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    },
+    "native-repeat-32k": {
+      "file": "evidence/gguf-dspark/native-repeat-32k/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    },
+    "native-repeat-64k": {
+      "file": "evidence/gguf-dspark/native-repeat-64k/completed-code.jsonl",
+      "status": "scored",
+      "passed": true,
+      "ok": true,
+      "finish_reason": "stop",
+      "max_tokens": 3072,
+      "answer_sha256": "999a3f23ffcad967398bf5731a7e63f8cc9c633b9602285a1b4ee3511d6f670d",
+      "tests": {
+        "partial_order_disabled": true,
+        "all_disabled": true,
+        "empty": true,
+        "large_limit": true,
+        "unit_limit": true,
+        "zero_limit": true,
+        "negative_limit": true
+      }
+    },
+    "release-32k": {
+      "file": "evidence/gguf-dspark/release-32k/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    },
+    "release-64k": {
+      "file": "evidence/gguf-dspark/release-64k/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    },
+    "repro-w7-32k": {
+      "file": "evidence/gguf-dspark/repro-w7-32k/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    },
+    "repro-w7-64k": {
+      "file": "evidence/gguf-dspark/repro-w7-64k/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    },
+    "upstream-w7-32k": {
+      "file": "evidence/gguf-dspark/upstream-w7-32k/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    },
+    "upstream-w7-64k": {
+      "file": "evidence/gguf-dspark/upstream-w7-64k/completed-code.jsonl",
+      "status": "missing",
+      "passed": null
+    }
+  }
+}

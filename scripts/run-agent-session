@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# Start an isolated local server, run the sequential tool fixture and stop it.
+set -euo pipefail
+if [[ $# -lt 2 || $# -gt 3 || "${1:-}" == --help ]]; then
+    echo 'Usage: scripts/run-agent-session {base|patch|patch-lookup|patch-no-cache|gguf-dspark|gguf-dspark-off|sglang-off|sglang-on|basalt-off|basalt-on} NEW_DIR [8k|32k|64k]'
+    echo 'AGENT_CHAIN_LENGTH selects 6 or 16 sequential tool calls (default 6).'
+    echo 'INKLING_PORT and INKLING_CTX select the unused loopback port and per-slot context.'
+    echo 'AGENT_CODE=1 also runs the coding fixture with a 3072-token output budget. AGENT_CODE_CONTEXT selects 512, 8k, 32k, or 64k input content tokens.'
+    if [[ ${1:-} == --help ]]; then exit 0; fi
+    exit 2
+fi
+root=$(cd "$(dirname "$0")/.." && pwd)
+cd "$root"
+arm=$1
+out=$2
+size=${3:-32k}
+case "$size" in 8k|32k|64k) ;; *) echo 'Session size must be 8k, 32k or 64k.' >&2; exit 2 ;; esac
+port=${INKLING_PORT:-18650}
+if [[ "$size" == 64k ]]; then default_context=69632; else default_context=36864; fi
+context=${INKLING_CTX:-$default_context}
+code_context=${AGENT_CODE_CONTEXT:-512}
+case "$code_context" in 512|8k|32k|64k) ;; *) echo 'Unsupported AGENT_CODE_CONTEXT' >&2; exit 2 ;; esac
+python=${INKLING_PYTHON:-"$root/.work/venv/bin/python"}
+hub=${HF_HUB_CACHE:-${HF_HOME:-"$HOME/.cache/huggingface"}/hub}
+tok="$hub/models--thinkingmachines--Inkling-2-Mini/snapshots/ed40e7da625f594fc9c4990f5f66be24873c22d7/tokenizer.json"
+[[ -r "$tok" ]] || { echo 'First fetch the tokenizer with scripts/fetch.py tokenizer.' >&2; exit 1; }
+cache_flags=()
+case "$arm" in
+    base|patch|patch-lookup|patch-no-cache)
+        engine=llama
+        name=inkling-mini-serve-$port
+        cmd=(scripts/llama "${arm%%-*}" serve)
+        if [[ "$arm" == patch-lookup ]]; then cmd+=(--spec-type ngram-simple); fi
+        if [[ "$arm" == patch-no-cache ]]; then cache_flags+=(--no-cache); fi
+        ;;
+    gguf-dspark|gguf-dspark-off)
+        engine=llama
+        name=inkling-mini-serve-$port
+        cmd=(scripts/serve-gguf-dspark)
+        if [[ "$arm" == gguf-dspark-off ]]; then cmd+=(--plain); fi
+        ;;
+    sglang-on|sglang-off|basalt-on|basalt-off)
+        engine=${arm%-*}
+        name=inkling-mini-alt-$port
+        cmd=(scripts/serve-alternative "$engine" "${arm##*-}" --port "$port" --context "$context" --parallel 1)
+        if [[ "$engine" == sglang && ${INKLING_SGLANG_SKIP_PREFILL_GRAPH:-0} == 1 ]]; then cmd+=(--no-prefill-graph); fi
+        if [[ "$engine" == sglang && ${INKLING_SGLANG_SKIP_WARMUP:-0} == 1 ]]; then cmd+=(--skip-warmup); fi
+        if [[ "$engine" == sglang && ${INKLING_SGLANG_MINIMAL_STARTUP:-0} == 1 ]]; then cmd+=(--minimal-startup); fi
+        if [[ "$engine" == sglang && -n ${INKLING_SGLANG_MEMORY:-} ]]; then cmd+=(--memory-fraction "$INKLING_SGLANG_MEMORY"); fi
+        if [[ "$engine" == sglang && -n ${INKLING_SGLANG_CHUNK:-} ]]; then cmd+=(--prefill-chunk "$INKLING_SGLANG_CHUNK"); fi
+        ;;
+    *) echo "Unknown arm: $arm" >&2; exit 2 ;;
+esac
+python3 - "$port" <<'PY'
+import socket, sys
+with socket.socket() as s:
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    s.bind(('127.0.0.1', int(sys.argv[1])))
+PY
+if [[ "$engine" != basalt ]] && docker inspect "$name" >/dev/null 2>&1; then echo "Container exists: $name" >&2; exit 1; fi
+mkdir "$out"
+export INKLING_PORT="$port" INKLING_CTX="$context" INKLING_SLOTS=1 INKLING_VISION=0
+environment=("INKLING_PORT=$port" "INKLING_CTX=$context" INKLING_SLOTS=1 INKLING_VISION=0)
+if [[ "$arm" == gguf-dspark* ]]; then
+    environment+=("INKLING_EXPLICIT_REL_MASK=${INKLING_EXPLICIT_REL_MASK:-0}" "INKLING_DRAFT_WIDTH=${INKLING_DRAFT_WIDTH:-7}" "INKLING_DSPARK_BUILD=${INKLING_DSPARK_BUILD:-$root/.work/dspark-repro/build}")
+fi
+printf '%q ' env "${environment[@]}" "${cmd[@]}" >"$out/command.txt"
+printf '\n' >>"$out/command.txt"
+setsid "${cmd[@]}" >"$out/server.log" 2>&1 &
+server=$!
+cleanup() {
+    local result=$?
+    trap - EXIT
+    if [[ "$engine" != basalt ]]; then docker stop -t 7 "$name" >/dev/null 2>&1 || true; fi
+    if kill -0 "$server" 2>/dev/null; then kill -TERM -- "-$server" 2>/dev/null || true; fi
+    wait "$server" || true
+    # The native server can still be releasing model resources after the
+    # wrapper terminates. Wait until the next launcher can acquire the lock.
+    if ! flock -w 60 "${XDG_RUNTIME_DIR:-/tmp}/inkling-mini-$(id -u)-gpu0.lock" true; then
+        echo 'GPU reservation still held after shutdown.' >&2
+        result=1
+    fi
+    exit "$result"
+}
+trap cleanup EXIT
+python3 - "$port" "$server" "$out/ready.json" <<'PY'
+import json, os, sys, time, urllib.request
+port, pid, dest = sys.argv[1:]
+start = time.monotonic()
+while time.monotonic() - start < 300:
+    try:
+        os.kill(int(pid), 0)
+    except ProcessLookupError:
+        raise SystemExit('Server exited before becoming ready. Inspect server.log.') from None
+    try:
+        with urllib.request.urlopen('http://127.0.0.1:'+port+'/v1/models',timeout=2) as response:
+            models = json.load(response)['data']
+        model = next((m for m in models if m['id']=='inkling-mini'),None)
+        if model and (model.get('status') or {}).get('value') != 'loading':
+            with open(dest,'w') as f: json.dump({'ready_s':time.monotonic()-start,'model':model},f, indent=2)
+            break
+    except OSError:
+        pass
+    time.sleep(.25)
+else: raise SystemExit('Server readiness timed out. Inspect server.log.')
+PY
+url="http://127.0.0.1:$port/v1"
+rc=0
+"$python" scripts/agent_session.py --base-url "$url" --engine "$engine" --size "$size" --tokenizer "$tok" \
+    --chain-length "${AGENT_CHAIN_LENGTH:-6}" --run-id "${AGENT_RUN_ID:-agent-session-v1}" --output "$out/session.json" "${cache_flags[@]}" || rc=$?
+if [[ ${AGENT_CODE:-0} == 1 ]]; then
+    "$python" scripts/bench_http.py --model inkling-mini --base-url "$url" --engine "$engine" --workload "$code_context" --answer-policy code \
+        --max-tokens 3072 --tokenizer-json "$tok" --run-id fixed-suite-v1 --output "$out/completed-code.jsonl"
+fi
+exit "$rc"

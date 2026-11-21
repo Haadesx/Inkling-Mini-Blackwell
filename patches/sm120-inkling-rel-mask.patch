@@ -1,0 +1,318 @@
+diff --git a/ggml/include/ggml.h b/ggml/include/ggml.h
+index 7c5b1e5..79dbe34 100644
+--- a/ggml/include/ggml.h
++++ b/ggml/include/ggml.h
+@@ -2590,6 +2590,13 @@ extern "C" {
+             int                   n_tasks,
+             void                * userdata);
+ 
++    // Experimental dense Inkling relative bias + causal mask, F32 add then F16.
++    // table [heads, distances, queries], indices [keys, queries], mask [keys, queries].
++    GGML_API struct ggml_tensor * ggml_inkling_rel_mask(
++            struct ggml_context * ctx, struct ggml_tensor * table,
++            struct ggml_tensor * indices, struct ggml_tensor * mask);
++    GGML_API bool ggml_is_inkling_rel_mask(const struct ggml_tensor * tensor);
++
+     GGML_API struct ggml_tensor * ggml_custom_inplace(
+             struct ggml_context * ctx,
+             struct ggml_tensor  * a,
+diff --git a/ggml/src/ggml.c b/ggml/src/ggml.c
+index b47c5ad..d775183 100644
+--- a/ggml/src/ggml.c
++++ b/ggml/src/ggml.c
+@@ -6154,6 +6154,47 @@ struct ggml_tensor * ggml_custom_4d(
+     return result;
+ }
+ 
++// The custom callback is also the unique capability identity checked by CUDA.
++// The partition is over the contiguous output; no mutable userdata is required.
++static void ggml_inkling_rel_mask_cpu(struct ggml_tensor * dst, int ith, int nth, void * userdata) {
++    GGML_UNUSED(userdata);
++    const struct ggml_tensor * table = dst->src[0];
++    const struct ggml_tensor * ids = dst->src[1];
++    const struct ggml_tensor * mask = dst->src[2];
++    const float * t = (const float *) table->data;
++    const int32_t * p = (const int32_t *) ids->data;
++    const ggml_fp16_t * m = (const ggml_fp16_t *) mask->data;
++    ggml_fp16_t * o = (ggml_fp16_t *) dst->data;
++    const int64_t nk = ids->ne[0], nq = ids->ne[1], nh = table->ne[0], nd = table->ne[1];
++    const int64_t total = nk * nq * nh;
++    for (int64_t i = ith; i < total; i += nth) {
++        const int64_t key = i % nk, query = (i / nk) % nq, head = i / (nk * nq);
++        const int32_t distance = p[query * nk + key];
++        GGML_ASSERT(distance >= 0 && distance < nd);
++        const float bias = t[(query * nd + distance) * nh + head];
++        o[i] = GGML_FP32_TO_FP16(bias + GGML_FP16_TO_FP32(m[query * nk + key]));
++    }
++}
++
++bool ggml_is_inkling_rel_mask(const struct ggml_tensor * tensor) {
++    if (!tensor || tensor->op != GGML_OP_CUSTOM) return false;
++    struct ggml_custom_op_params params;
++    memcpy(&params, tensor->op_params, sizeof(params));
++    return params.fun == ggml_inkling_rel_mask_cpu && params.userdata == NULL;
++}
++
++struct ggml_tensor * ggml_inkling_rel_mask(struct ggml_context * ctx, struct ggml_tensor * table,
++                                           struct ggml_tensor * indices, struct ggml_tensor * mask) {
++    GGML_ASSERT(table->type == GGML_TYPE_F32 && indices->type == GGML_TYPE_I32 && mask->type == GGML_TYPE_F16);
++    GGML_ASSERT(ggml_is_contiguous(table) && ggml_is_contiguous(indices) && ggml_is_contiguous(mask));
++    GGML_ASSERT(table->ne[3] == 1 && indices->ne[2] == 1 && indices->ne[3] == 1 &&
++                mask->ne[2] == 1 && mask->ne[3] == 1 && table->ne[2] == indices->ne[1] &&
++                mask->ne[0] == indices->ne[0] && mask->ne[1] == indices->ne[1]);
++    struct ggml_tensor * args[] = {table, indices, mask};
++    return ggml_custom_4d(ctx, GGML_TYPE_F16, indices->ne[0], indices->ne[1], table->ne[0], 1,
++                          args, 3, ggml_inkling_rel_mask_cpu, GGML_N_TASKS_MAX, NULL);
++}
++
+ struct ggml_tensor * ggml_custom_inplace(
+         struct ggml_context * ctx,
+         struct ggml_tensor  * a,
+diff --git a/ggml/src/ggml-cuda/ggml-cuda.cu b/ggml/src/ggml-cuda/ggml-cuda.cu
+index 3e1f167..faeb6a0 100644
+--- a/ggml/src/ggml-cuda/ggml-cuda.cu
++++ b/ggml/src/ggml-cuda/ggml-cuda.cu
+@@ -2809,8 +2809,48 @@ static void ggml_cuda_mul_mat_id(ggml_backend_cuda_context & ctx, ggml_tensor *
+         nb1, nb2, nb3, stream);
+ }
+ 
++#if !defined(GGML_USE_HIP) && !defined(GGML_USE_MUSA)
++static bool ggml_cuda_inkling_rel_mask_supported(const ggml_tensor * dst) {
++    if (!ggml_is_inkling_rel_mask(dst) || !dst->src[0] || !dst->src[1] || !dst->src[2] || dst->src[3]) return false;
++    const auto * t = dst->src[0]; const auto * p = dst->src[1]; const auto * m = dst->src[2];
++    return t->type == GGML_TYPE_F32 && p->type == GGML_TYPE_I32 && m->type == GGML_TYPE_F16 && dst->type == GGML_TYPE_F16 &&
++        ggml_is_contiguous(t) && ggml_is_contiguous(p) && ggml_is_contiguous(m) && ggml_is_contiguous(dst) &&
++        t->ne[3] == 1 && p->ne[2] == 1 && p->ne[3] == 1 && m->ne[2] == 1 && m->ne[3] == 1 &&
++        t->ne[2] == p->ne[1] && m->ne[0] == p->ne[0] && m->ne[1] == p->ne[1] &&
++        dst->ne[0] == p->ne[0] && dst->ne[1] == p->ne[1] && dst->ne[2] == t->ne[0] && dst->ne[3] == 1;
++}
++
++static __global__ void ggml_cuda_inkling_rel_mask(const float * table, const int32_t * pos, const half * mask, half * out,
++                                                   int64_t nk, int64_t nq, int64_t nh, int64_t nd) {
++    ggml_cuda_pdl_sync();
++    const int64_t total = nk * nq * nh;
++    for (int64_t i = int64_t(blockIdx.x) * blockDim.x + threadIdx.x; i < total; i += int64_t(gridDim.x) * blockDim.x) {
++        const int64_t key = i % nk, query = (i / nk) % nq, head = i / (nk * nq);
++        const int32_t d = pos[query * nk + key];
++        assert(d >= 0 && d < nd);
++        const float bias = table[(query * nd + d) * nh + head];
++        out[i] = __float2half_rn(__fadd_rn(bias, __half2float(mask[query * nk + key])));
++    }
++    ggml_cuda_pdl_lc();
++}
++#endif
++
+ static bool ggml_cuda_compute_forward(ggml_backend_cuda_context & ctx, struct ggml_tensor * dst) {
+     switch (dst->op) {
++        case GGML_OP_CUSTOM:
++#if !defined(GGML_USE_HIP) && !defined(GGML_USE_MUSA)
++            if (ggml_cuda_inkling_rel_mask_supported(dst)) {
++                const auto * t = dst->src[0]; const auto * p = dst->src[1]; const auto * m = dst->src[2];
++                const int64_t count = ggml_nelements(dst);
++                const unsigned blocks = unsigned(std::min<int64_t>((count + 255) / 256, 65535));
++                const ggml_cuda_kernel_launch_params launch(dim3(blocks), dim3(256), 0, ctx.stream());
++                ggml_cuda_kernel_launch(ggml_cuda_inkling_rel_mask, launch, static_cast<const float *>(t->data),
++                    static_cast<const int32_t *>(p->data), static_cast<const half *>(m->data), static_cast<half *>(dst->data),
++                    p->ne[0], p->ne[1], t->ne[0], t->ne[1]);
++                break;
++            }
++#endif
++            return false;
+         case GGML_OP_ARGMAX:
+             ggml_cuda_argmax(ctx, dst);
+             break;
+@@ -6347,6 +6387,12 @@ static bool ggml_backend_cuda_device_supports_op(ggml_backend_dev_t dev, const g
+     }
+ 
+     switch (op->op) {
++        case GGML_OP_CUSTOM:
++#if !defined(GGML_USE_HIP) && !defined(GGML_USE_MUSA)
++            return ggml_cuda_info().devices[dev_ctx->device].cc == GGML_CUDA_CC_BLACKWELL && ggml_cuda_inkling_rel_mask_supported(op);
++#else
++            return false;
++#endif
+         case GGML_OP_UNARY:
+             switch (ggml_get_unary_op(op)) {
+                 case GGML_UNARY_OP_ABS:
+diff --git a/src/models/inkling2.cpp b/src/models/inkling2.cpp
+index 9575d00..c45078a 100644
+--- a/src/models/inkling2.cpp
++++ b/src/models/inkling2.cpp
+@@ -1,5 +1,7 @@
+ #include "models.h"
+ #include "../llama-memory-hybrid-iswa.h"
++#include <cstdlib>
++#include <cstring>
+ 
+ void llama_model_inkling2::load_arch_hparams(llama_model_loader & ml) {
+     ml.get_key(LLM_KV_ATTENTION_LAYERNORM_RMS_EPS, hparams.f_norm_rms_eps);
+@@ -361,9 +363,32 @@ ggml_tensor * llama_model_inkling2::graph::build_layer(int il, int ip, ggml_tens
+         table = ggml_sub(ctx0, table, ggml_reshape_3d(ctx0, sinks, 1, n_head, n_tokens));
+         table = ggml_cont(ctx0, ggml_permute(ctx0, table, 1, 0, 2, 3));
+ 
+-        ggml_tensor * kq_b = ggml_get_rows(ctx0, table, rel_pos);
+-        kq_b = ggml_reshape_4d(ctx0, kq_b, n_head, n_kv, n_tokens/n_stream, n_stream);
+-        kq_b = ggml_cont(ctx0, ggml_permute(ctx0, kq_b, 2, 0, 1, 3));
++        const char * opt = std::getenv("INKLING_EXPLICIT_REL_MASK");
++        ggml_tensor * raw_mask = is_swa ? attn->self_attn_mask_swa.raw : attn->self_attn_mask.raw;
++        const bool explicit_mask = opt && std::strcmp(opt, "1") == 0 && cparams.flash_attn &&
++                                   n_stream == 1 && n_tokens >= 128 && raw_mask &&
++                                   table->type == GGML_TYPE_F32 && rel_pos->type == GGML_TYPE_I32 &&
++                                   raw_mask->type == GGML_TYPE_F16 && ggml_is_contiguous(table) &&
++                                   ggml_is_contiguous(rel_pos) && ggml_is_contiguous(raw_mask) &&
++                                   table->ne[0] > 0 && table->ne[1] > 0 && rel_pos->ne[0] > 0 && rel_pos->ne[1] > 0 &&
++                                   table->ne[3] == 1 && rel_pos->ne[2] == 1 && rel_pos->ne[3] == 1 &&
++                                   raw_mask->ne[2] == 1 && raw_mask->ne[3] == 1 &&
++                                   table->ne[2] == rel_pos->ne[1] && raw_mask->ne[0] == rel_pos->ne[0] &&
++                                   raw_mask->ne[1] == rel_pos->ne[1];
++        ggml_tensor * kq_b = nullptr;
++        if (explicit_mask) {
++            auto * candidate = ggml_inkling_rel_mask(ctx0, table, rel_pos, raw_mask);
++            auto * device = model.dev_layer(il);
++            if (device && ggml_backend_dev_type(device) == GGML_BACKEND_DEVICE_TYPE_GPU &&
++                ggml_backend_dev_supports_op(device, candidate)) {
++                kq_b = candidate;
++            }
++        }
++        if (!kq_b) {
++            kq_b = ggml_get_rows(ctx0, table, rel_pos);
++            kq_b = ggml_reshape_4d(ctx0, kq_b, n_head, n_kv, n_tokens/n_stream, n_stream);
++            kq_b = ggml_cont(ctx0, ggml_permute(ctx0, kq_b, 2, 0, 1, 3));
++        }
+         cb(kq_b, "kq_b", il);
+ 
+         sinks = ggml_fill(ctx0, ggml_new_tensor_1d(ctx0, GGML_TYPE_F32, n_head), 0.0f);
+diff --git a/src/llama-graph.cpp b/src/llama-graph.cpp
+index 1bd3f8d..f63cf5d 100644
+--- a/src/llama-graph.cpp
++++ b/src/llama-graph.cpp
+@@ -4408,13 +4408,19 @@ ggml_tensor * llm_graph_context::build_attn(
+     GGML_ASSERT(attn_mask.rows == nullptr);
+ 
+     // a mask per head, in the dense layout of the input mask, which flash attention takes in F16
+-    ggml_tensor * kq_mask = attn_mask.raw;
+-    if (kq_mask->type != GGML_TYPE_F32) {
+-        kq_mask = ggml_cast(ctx0, kq_mask, GGML_TYPE_F32);
+-    }
+-    kq_mask = ggml_add(ctx0, kq_b, kq_mask);
+-    if (cparams.flash_attn) {
+-        kq_mask = ggml_cast(ctx0, kq_mask, GGML_TYPE_F16);
++    ggml_tensor * kq_mask;
++    if (ggml_is_inkling_rel_mask(kq_b)) {
++        GGML_ASSERT(cparams.flash_attn && kq_b->src[2] == attn_mask.raw);
++        kq_mask = kq_b;
++    } else {
++        kq_mask = attn_mask.raw;
++        if (kq_mask->type != GGML_TYPE_F32) {
++            kq_mask = ggml_cast(ctx0, kq_mask, GGML_TYPE_F32);
++        }
++        kq_mask = ggml_add(ctx0, kq_b, kq_mask);
++        if (cparams.flash_attn) {
++            kq_mask = ggml_cast(ctx0, kq_mask, GGML_TYPE_F16);
++        }
+     }
+     cb(kq_mask, "kq_mask_rel_pos", il);
+ 
+diff --git a/tests/inkling-rel-mask-smoke.cpp b/tests/inkling-rel-mask-smoke.cpp
+new file mode 100644
+index 0000000..102f5fc
+--- /dev/null
++++ b/tests/inkling-rel-mask-smoke.cpp
+@@ -0,0 +1,97 @@
++#include "ggml.h"
++#include "ggml-backend.h"
++#include "ggml-cpu.h"
++#include "ggml-cuda.h"
++
++#include <cmath>
++#include <cstdio>
++#include <cstring>
++#include <vector>
++
++static int run_case(ggml_backend_t backend, int heads, int keys, int queries, int distances, bool with_nans) {
++    auto * ctx   = ggml_init({ 4*1024*1024, nullptr, true });
++    auto * table = ggml_new_tensor_3d(ctx, GGML_TYPE_F32, heads, distances, queries);
++    auto * pos   = ggml_new_tensor_2d(ctx, GGML_TYPE_I32, keys, queries);
++    auto * mask  = ggml_new_tensor_4d(ctx, GGML_TYPE_F16, keys, queries, 1, 1);
++
++    auto * original = ggml_get_rows(ctx, table, pos);
++    original = ggml_reshape_4d(ctx, original, heads, keys, queries, 1);
++    original = ggml_cont(ctx, ggml_permute(ctx, original, 2, 0, 1, 3));
++    original = ggml_cast(ctx, ggml_add(ctx, original, ggml_cast(ctx, mask, GGML_TYPE_F32)), GGML_TYPE_F16);
++    auto * fused = ggml_inkling_rel_mask(ctx, table, pos, mask);
++    if (!ggml_backend_supports_op(backend, fused)) {
++        std::fprintf(stderr, "backend does not support the custom op\n");
++        ggml_free(ctx);
++        return 4;
++    }
++
++    auto * graph = ggml_new_graph_custom(ctx, 128, false);
++    ggml_build_forward_expand(graph, original);
++    ggml_build_forward_expand(graph, fused);
++    auto buffer = ggml_backend_alloc_ctx_tensors(ctx, backend);
++    if (!buffer) {
++        ggml_free(ctx);
++        return 2;
++    }
++
++    std::vector<float> table_data((size_t) heads*distances*queries);
++    std::vector<int32_t> positions((size_t) keys*queries);
++    std::vector<ggml_fp16_t> masks(positions.size());
++    for (size_t i = 0; i < table_data.size(); ++i) {
++        table_data[i] = float(int((i*37) % 997) - 498)/37.0f;
++        if (with_nans && i % 173 == 0) table_data[i] = NAN;
++    }
++    for (size_t i = 0; i < positions.size(); ++i) {
++        positions[i] = (i*19) % distances;
++        const float values[] = { 0.0f, -INFINITY, -10000.0f, -0.0f, 0.25f, -0.5f };
++        masks[i] = ggml_fp32_to_fp16(values[i % 6]);
++    }
++    ggml_backend_tensor_set(table, table_data.data(), 0, table_data.size()*sizeof(float));
++    ggml_backend_tensor_set(pos, positions.data(), 0, positions.size()*sizeof(int32_t));
++    ggml_backend_tensor_set(mask, masks.data(), 0, masks.size()*sizeof(ggml_fp16_t));
++    if (ggml_backend_graph_compute(backend, graph) != GGML_STATUS_SUCCESS) {
++        ggml_backend_buffer_free(buffer);
++        ggml_free(ctx);
++        return 3;
++    }
++    ggml_backend_synchronize(backend);
++
++    std::vector<ggml_fp16_t> expected((size_t) heads*keys*queries), actual(expected.size());
++    ggml_backend_tensor_get(original, expected.data(), 0, expected.size()*sizeof(ggml_fp16_t));
++    ggml_backend_tensor_get(fused, actual.data(), 0, actual.size()*sizeof(ggml_fp16_t));
++    size_t mismatches = 0, nan_payload_diffs = 0;
++    for (size_t i = 0; i < expected.size(); ++i) {
++        if (expected[i] != actual[i]) {
++            if (std::isnan(ggml_fp16_to_fp32(expected[i])) && std::isnan(ggml_fp16_to_fp32(actual[i]))) {
++                ++nan_payload_diffs;
++            } else {
++                ++mismatches;
++            }
++        }
++    }
++    std::printf("H=%d K=%d Q=%d D=%d nan=%d: %s (%zu elements, %zu NaN payload differences)\n",
++                heads, keys, queries, distances, with_nans, mismatches ? "FAIL" : "PASS", expected.size(), nan_payload_diffs);
++    ggml_backend_buffer_free(buffer);
++    ggml_free(ctx);
++    return mismatches ? 1 : 0;
++}
++
++int main(int argc, char ** argv) {
++    if (argc != 2 || (std::strcmp(argv[1], "cpu") && std::strcmp(argv[1], "cuda"))) {
++        std::fprintf(stderr, "usage: %s cpu|cuda\n", argv[0]);
++        return 2;
++    }
++    auto backend = std::strcmp(argv[1], "cpu") == 0 ? ggml_backend_cpu_init() : ggml_backend_cuda_init(0);
++    if (!backend) {
++        std::fprintf(stderr, "backend unavailable\n");
++        return 2;
++    }
++    int rc = 0;
++    for (int keys : { 1, 31, 41, 256, 1025 }) {
++        for (int heads : { 1, 5, 24 }) {
++            for (bool nans : { false, true }) rc |= run_case(backend, heads, keys, 128, 33, nans);
++        }
++    }
++    ggml_backend_free(backend);
++    return rc;
++}

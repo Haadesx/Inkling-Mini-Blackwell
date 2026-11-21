@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Online, CPU-only preparation for exactly one alternative engine.
+set -euo pipefail
+root=$(cd "$(dirname "$0")/.." && pwd)
+work="$root/.work"
+usage() { echo 'Usage: scripts/prepare-alternatives {sglang|basalt} [--dry-run]'; echo 'Online: fetch and verify the selected pinned HF track and engine dependencies; no GPU is used.'; }
+if [[ ${1:-} == --help || ${1:-} == -h ]]; then usage; exit 0; fi
+[[ $# -ge 1 && $# -le 2 && ( $1 == sglang || $1 == basalt ) ]] || { usage >&2; exit 2; }
+track=$1; dry=${2:-}; [[ -z $dry || $dry == --dry-run ]] || { usage >&2; exit 2; }
+archive_sha=89da792322248de80d9866dea87f2869fe595ed8311008572405fd3cea5b9c08
+binary_sha=45a220cc8d25244aadcd4c98dcb3a8a6c7d590f8617562903404d21ef0338677
+image='lmsysorg/sglang@sha256:421aed3ac11741381eac350bf7b1db28a0cafb6ae49b57ae78fba86a16a32306'
+cuda_image='nvidia/cuda@sha256:d266e59b88c295bc5fa0e4cef9064eaff84939381b09e2c3d76a5532a303e42d'
+if [[ $dry == --dry-run ]]; then
+  printf 'Would create Python 3.12 environments with uv and install huggingface-hub==2.4.0 in .work/alternatives-fetch-venv and run scripts/fetch.py %s\n' "$([[ $track == sglang ]] && echo native || echo basalt)"
+  if [[ $track == sglang ]]; then echo "Would pull $image"; else echo "Would verify archive SHA-256 $archive_sha and binary SHA-256 $binary_sha; install pinned release requirements and copy CUDA libraries from $cuda_image unless BASALT_CUDA_LIBDIR is set."; fi
+  exit 0
+fi
+mkdir -p "$work"
+command -v uv >/dev/null || { echo 'uv is required: https://docs.astral.sh/uv/getting-started/installation/' >&2; exit 1; }
+make_venv() {
+  local path=$1
+  if [[ ! -x $path/bin/python ]]; then uv venv --python 3.12 "$path"; fi
+  "$path/bin/python" -c 'import sys; assert sys.version_info[:2] == (3, 12), "existing venv must use Python 3.12"'
+}
+make_venv "$work/alternatives-fetch-venv"
+uv pip install --python "$work/alternatives-fetch-venv/bin/python" 'huggingface-hub==2.4.0'
+"$work/alternatives-fetch-venv/bin/python" "$root/scripts/fetch.py" "$([[ $track == sglang ]] && echo native || echo basalt)"
+if [[ $track == sglang ]]; then
+  docker pull "$image"
+else
+  archive="$work/basalt-v0.5.5-linux-x64.tar.gz"
+  if [[ ! -f $archive ]]; then
+    curl -fL --retry 3 -o "$archive.partial" 'https://github.com/jesdga95/basalt/releases/download/v0.5.5/basalt-v0.5.5-linux-x64.tar.gz'
+    mv "$archive.partial" "$archive"
+  fi
+  printf '%s  %s\n' "$archive_sha" "$archive" | sha256sum -c -
+  tar -xzf "$archive" -C "$work"
+  printf '%s  %s\n' "$binary_sha" "$work/basalt-v0.5.5-linux-x64/bin/basalt" | sha256sum -c -
+  make_venv "$work/basalt-venv"
+  uv pip install --python "$work/basalt-venv/bin/python" -r "$work/basalt-v0.5.5-linux-x64/requirements.txt"
+  if [[ -n ${BASALT_CUDA_LIBDIR:-} ]]; then
+    for lib in libcudart.so.13 libcublas.so.13 libcublasLt.so.13; do [[ -r $BASALT_CUDA_LIBDIR/$lib ]] || { echo "Missing $BASALT_CUDA_LIBDIR/$lib" >&2; exit 1; }; done
+    echo "Using BASALT_CUDA_LIBDIR=$BASALT_CUDA_LIBDIR; export it for serving."
+  else
+    mkdir -p "$work/basalt-cuda13"
+    docker run --rm --user "$(id -u):$(id -g)" -v "$work/basalt-cuda13:/out" --entrypoint sh "$cuda_image" -ec 'for lib in libcudart.so.13 libcublas.so.13 libcublasLt.so.13; do cp -L "/usr/local/cuda/lib64/$lib" "/out/$lib"; done'
+  fi
+fi

@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Hold the project lock for the lifetime of the command, including serving.
+set -euo pipefail
+lock="${XDG_RUNTIME_DIR:-/tmp}/inkling-mini-$(id -u)-gpu0.lock"
+exec 9>"$lock"
+if ! flock -n 9; then
+    echo "Another Inkling run holds GPU 0. Wait for it to finish." >&2
+    exit 75
+fi
+owners=$(nvidia-smi -i 0 --query-compute-apps=pid,process_name,used_memory --format=csv,noheader)
+# Mission Center's Flatpak registers a C+G context while graphing the desktop.
+# Match its cgroup and process name; every other compute allocation remains exclusive.
+compute_owners=""
+while IFS= read -r owner; do
+    [[ -n "$owner" ]] || continue
+    pid=${owner%%,*}
+    if [[ "$owner" == *", missioncenter,"* ]] && \
+       grep -q '/app-flatpak-io[.]missioncenter[.]MissionCenter-' "/proc/$pid/cgroup" 2>/dev/null; then
+        echo "Desktop telemetry (Mission Center): $owner" >&2
+        continue
+    fi
+    compute_owners+="$owner"$'\n'
+done <<< "$owners"
+if [[ -n "$compute_owners" ]]; then
+    echo "GPU 0 already has a compute allocation:" >&2
+    printf "%s" "$compute_owners" >&2
+    exit 75
+fi
+"$@"
